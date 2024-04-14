@@ -46,25 +46,26 @@ This script relies on curl for the requests to the api and jq to parse the json 
 
 ### Installation
 
-   Setup `Ollama` environment, [Manual install instructions](https://github.com/ollama/ollama/blob/main/docs/linux.md), [ollama usage](https://github.com/ollama/ollama), and [Ollama model library](https://ollama.com/library)
+   - Setup `Ollama` environment, [Manual install instructions](https://github.com/ollama/ollama/blob/main/docs/linux.md), [ollama usage](https://github.com/ollama/ollama), and [Ollama model library](https://ollama.com/library)
    ```sh
    curl -fsSL https://ollama.com/install.sh | sh
 
    ollama pull llama2  # used llama2 by default
    ```
 
-   To install, run this in your terminal and provide your OpenAI API key when asked.
+   - To install, run this in your terminal and provide your OpenAI API key when asked.
    
    ```sh
-   curl -sS https://raw.githubusercontent.com/reid41/shell-pilot/main/spilot_install.sh | sudo -E bash
+   curl -sS -o spilot_install.sh https://raw.githubusercontent.com/reid41/shell-pilot/main/spilot_install.sh
+   bash spilot_install.sh
    ```
 
-   Set your local `Ollama` server ip in configuration file `spilot_common.sh` if not set during the installation
+   - Set your local `Ollama` server ip in configuration file `spilot_common.sh` if not set during the installation
    ```sh
    OLLAMA_SERVER_IP=<ollama server ip address>
    ```
 
-   You can also set the other parameters in `spilot_common.sh` before using.
+   - You can also set the other parameters in `spilot_common.sh` before using.
    ```sh
    e.g.
    TEMPERATURE=0.6
@@ -258,6 +259,7 @@ This script relies on curl for the requests to the api and jq to parse the json 
   - `cmd:` To get a command with the specified functionality and run it, just type `cmd:` and explain what you want to achieve. The script will always ask you if you want to execute the command. i.e.
   *If a command modifies your file system or dowloads external files the script will show a warning before executing, but if the execution flag is disabled by default if found danger.*
   ```shell
+  # >>>>>> MacOS
   s-pilot
   Welcome to Shell Pilot!!
   You can quit with 'q' or 'e'.
@@ -275,8 +277,17 @@ This script relies on curl for the requests to the api and jq to parse the json 
   com.xx.launchd.xx	com.x.xx		com.xx.out
   com.xx.launchd.xx	com.x.err			powerlog
 
+  # >>>>>> Linux
+  <<You>>
+  cmd: update my os
 
-  # The danger cmd example:
+
+  <<ShellPilot>>  sudo dnf update
+  Would you like to execute it? (Yes/No)
+  n
+
+
+  # >>>>>> The danger cmd example:
   <<You>>
   cmd: remove the files in /tmp/
 

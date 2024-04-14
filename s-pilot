@@ -359,6 +359,32 @@ check_the_setting(){
 	exit 0
 }
 
+# Function to retrieve detailed system information
+get_system_info() {
+    local os_type=$(uname -s)
+
+    if [[ "$os_type" == "Darwin" ]]; then
+        # macOS system detected
+        local mac_version=$(sw_vers -productVersion)
+        system_info="Operating system: macOS, Version: ${mac_version}"
+    elif [[ "$os_type" == "Linux" ]]; then
+        # Linux system detected
+        if [[ -f /etc/os-release ]]; then
+            # This should work for most Linux distributions
+            local version=$(grep PRETTY_NAME /etc/os-release | cut -d '"' -f2)
+            system_info="Operating system: Linux, Version: ${version}"
+        else
+            # Unable to find version, return generic info
+            system_info="Operating system: Linux, Version: Unknown"
+        fi
+    else
+        # Only return the generic OS type if it's neither Linux nor Darwin
+        system_info="Operating system: ${os_type}, Version: Unknown"
+    fi
+
+    echo "$system_info"
+}
+
 
 # parse command line arguments
 while [[ "$#" -gt 0 ]]; do
@@ -544,7 +570,9 @@ while $running; do
 		# escape quotation marks, new lines, backslashes...
 		escaped_prompt=$(escape "$prompt")
 		escaped_prompt=${escaped_prompt#cmd:}
-		request_prompt=$COMMAND_GENERATION_PROMPT$escaped_prompt
+		system_info=$(get_system_info)
+		request_prompt="System info: ${system_info}\n${COMMAND_GENERATION_PROMPT}\nCommand request: ${escaped_prompt}"
+		# request_prompt=${COMMAND_GENERATION_PROMPT}${system_info}${escaped_prompt}
 		build_user_chat_message "$request_prompt"
 		response=$(request_to_chat "$chat_message")
 		# response=$(request_to_chat_ollama "$chat_message")
