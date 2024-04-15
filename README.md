@@ -20,7 +20,7 @@ Also, support with local LLm from `ollma`.
 
 ## Disclaimer
 
-* This is still a test project for using online models and local LLM in shell environment. `It is not production ready, so do not use in critical/production system.`
+* This is still a test project for using online models and local LLM in shell environment. `It is not production ready, so do not use in critical/production system, and do not use to analyze customer data.`
 
 ## Getting Started
 
