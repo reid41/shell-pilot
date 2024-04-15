@@ -334,3 +334,8 @@ This script relies on curl for the requests to the api and jq to parse the json 
       
     For OpenAI: [OpenAI API documentation](https://platform.openai.com/docs/api-reference/completions/create)
     For Ollama: [Ollama API documentation](https://github.com/ollama/ollama/blob/main/docs/api.md)
+
+### Disclaimer
+
+* This is still a test project for using online models and local LLM in shell environment. `It is not production ready, so do not use in critical/production system.`
+
