@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  ollama-server:
+    image: ollama-server:latest
+    environment:
+      - MODEL=llama2 # change to mistral or any other model. 
+    ports:
+      - 11434:11434
+    volumes:
+     #to cache the models to that we don't need to reload 
+      - ./models:/app/ollama/.ollama/
+    # Add any additional configuration for your ollama-server service here
+    # For example, environment variables, etc.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia # change this to appropriatedrive 
+              count: 1
+              capabilities: [gpu]
+
+  s-pilot:
+    image: spilot:latest
+    depends_on:
+      - ollama-server
+    environment:
+      - OLLAMA_SERVER_HOST=ollama-server
+    healthcheck:
+      test: ["CMD", "curl ollama-server:11434"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    # Add any additional configuration for your s-pilot service here
+    # For example, ports, volumes, etc.

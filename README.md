@@ -62,7 +62,7 @@ This script relies on curl for the requests to the api and jq to parse the json 
 
    - Set your local `Ollama` server ip in configuration file `spilot_common.sh` if not set during the installation
    ```sh
-   OLLAMA_SERVER_IP=<ollama server ip address>
+   OLLAMA_SERVER_HOST=<ollama server ip address>
    ```
 
    - You can also set the other parameters in `spilot_common.sh` before using.
@@ -85,7 +85,68 @@ This script relies on curl for the requests to the api and jq to parse the json 
   - Add the path of `s-pilot` to your `$PATH`. You do that by adding this line to your shell profile: `export PATH=$PATH:/path/to/s-pilot`
   - Reset the `SHELL_PILOT_CONFIG_PATH` in `s-pilot` if the `spilot_common.sh` path changed
   - Add the OpenAI API key to your shell profile by adding this line `export OPENAI_KEY=your_key_here`
-  - Add Ollama server ip address in `spilot_common.sh` for `OLLAMA_SERVER_IP` variable
+  - Add Ollama server ip address in `spilot_common.sh` for `OLLAMA_SERVER_HOST` variable
+
+### Running the service as a container
+
+
+# Ollama Server and S-Pilot Podman Compose Configuration
+
+This Podman Compose configuration file defines two services: `ollama-server` and `s-pilot`. The `ollama-server` service hosts the Ollama application, while the `s-pilot` service runs the S-Pilot application. The services are configured to work together in a machine learning model serving environment.
+
+## Getting Started for Developers
+
+### Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+
+- Podman: [Install Podman](https://podman.io/getting-started/installation)
+- Podman Compose: [Install Podman Compose](https://github.com/containers/podman-compose#installation)
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/reid41/shell-pilot
+cd shell-pilot
+``` 
+
+#### Build ollama-server and s-pilot images
+
+##### To build the ollama-server without any model 
+
+```bash
+cd ollama-server
+podman built -t ollama-server . 
+```
+
+> Note: Model will be downloaded at during the container is started if the model is not available 
+
+##### Step 1: Build the ollama-server with embedded models
+
+ ```bash
+cd ollama-server
+podman built -t ollama-server .  --build-arg PULL_MODEL_BY_DEFAULT=true --build-arg MODEL=ollama
+```
+
+Above will pull the model and embed inside the container for faster startup 
+
+##### Step 2: Build the s-pilot container
+
+Execute the below commands from the project root:
+
+ ```bash
+podman built -t spilot:latest . 
+```
+
+##### Step 3: Start ollama and s-pilot
+
+Execute the below commands from the project root:
+
+ ```bash
+ mkdir models #cache directory for downloaded models :)
+podman compose up -d
+```
+
 
 ## Usage
 

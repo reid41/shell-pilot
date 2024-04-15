@@ -152,18 +152,18 @@ else
   echo "https://github.com/reid41/shell-pilot/tree/main#manual-installation"
 fi
 
-# Function to check and append OLLAMA_SERVER_IP to the specified configuration file
+# Function to check and append OLLAMA_SERVER_HOST to the specified configuration file
 add_ollama_ip() {
   local config_file=$1
 
-  # Check if the OLLAMA_SERVER_IP variable already exists in the configuration file
-  if grep -q "OLLAMA_SERVER_IP=" "$config_file"; then
-    local existing_ip=$(grep "OLLAMA_SERVER_IP=" "$config_file" | cut -d'=' -f2)
+  # Check if the OLLAMA_SERVER_HOST variable already exists in the configuration file
+  if grep -q "OLLAMA_SERVER_HOST=" "$config_file"; then
+    local existing_ip=$(grep "OLLAMA_SERVER_HOST=" "$config_file" | cut -d'=' -f2)
     if [[ $existing_ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-      echo "OLLAMA_SERVER_IP is already set to a valid IP address: $existing_ip"
+      echo "OLLAMA_SERVER_HOST is already set to a valid IP address: $existing_ip"
       return 0
     else
-      echo "Error: OLLAMA_SERVER_IP is set but not valid: $existing_ip"
+      echo "Error: OLLAMA_SERVER_HOST is set but not valid: $existing_ip"
       return 1
     fi
   else
@@ -171,8 +171,8 @@ add_ollama_ip() {
     while true; do
       read -p "Enter the OLLAMA server IP address: " ip_address
       if [[ $ip_address =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        echo "OLLAMA_SERVER_IP=$ip_address" >> "$config_file"
-        echo "OLLAMA_SERVER_IP added to $config_file"
+        echo "OLLAMA_SERVER_HOST=$ip_address" >> "$config_file"
+        echo "OLLAMA_SERVER_HOST added to $config_file"
         break
       else
         echo "Error: Invalid IP address entered. Please enter a valid IP address."
@@ -184,7 +184,7 @@ add_ollama_ip() {
 # Specify the configuration file path
 CONFIG_FILE="${INSTALL_PATH}/spilot_common.sh"
 
-# Check and append OLLAMA_SERVER_IP
+# Check and append OLLAMA_SERVER_HOST
 if add_ollama_ip "$CONFIG_FILE"; then
   echo "Operation successful."
 else
