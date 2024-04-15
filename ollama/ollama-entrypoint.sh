@@ -2,6 +2,8 @@
 set -e
 
 # Start ollama serve in the background
+export OLLAMA_HOST=0.0.0.0 
+
 ollama serve &
 
 # Sleep for 50 seconds (adjust as needed)
