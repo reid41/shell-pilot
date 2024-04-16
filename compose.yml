@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  ollama-server:
+    image: ollama-server:latest
+    build: 
+      context : ./ollama/
+      dockerfile: Containerfile
+      args:
+        - PULL_MODEL_BY_DEFAULT= true
+        - MODEL=llama2 #Model should be a valid model
+    environment:
+      - MODEL=llama2 # Set this if we want to download the models during runtime. Change to mistral or any other model. 
+    ports:
+      - 11434:11434
+      
+    volumes:
+     #to cache the models to that we don't need to reload 
+      - ./models:/app/ollama/.ollama/
+    # Add any additional configuration for your ollama-server service here
+    # For example, environment variables, etc.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia # change this to appropriatedrive 
+              count: 1
+              capabilities: [gpu]
+    #volumes:
+    #Mount any host volume as required.
+    # - ./data:/data
+  s-pilot:
+    image: spilot:latest
+    build: 
+      context : .
+      dockerfile: Containerfile
+    depends_on:
+      - ollama-server
+    environment:
+      - OLLAMA_SERVER_HOST=ollama-server
+    healthcheck:
+      test: ["CMD", "curl ollama-server:11434"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    #volumes:
+    #Mount any host volume as required.
+    # - ./data:/data
+
+    # Add any additional configuration for your s-pilot service here
+    # For example, ports, volumes, etc.
