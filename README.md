@@ -114,46 +114,51 @@ git clone https://github.com/reid41/shell-pilot
 cd shell-pilot
 ``` 
 
+##### Step 1: Start ollama and s-pilot
+
+Execute the below commands from the project root:
+
+ ```bash
+mkdir models #cache directory for downloaded models :)
+podman compose up -d
+``` 
+> If we need to interact with local volumes, enable the volume sections in the compose.ym file as required
+
+This step will build the required containers and bring up all the services
+
+### Publishing individual images
+
+
 #### Build ollama-server and s-pilot images
 
 ##### To build the ollama-server without any model 
 
 ```bash
 cd ollama-server
-podman built -t ollama-server . 
+podman build -t ollama-server . 
 ```
 
-> Note: Model will be downloaded at during the container is started if the model is not available 
+> Note: Model will be downloaded at during the container is started if the model is not available. Convinient option to distribute ollama binary as containers and pull the lastest version of the model during startup.
 
 ##### Step 1: Build the ollama-server with embedded models
 
  ```bash
 cd ollama-server
-podman built -t ollama-server .  --build-arg PULL_MODEL_BY_DEFAULT=true --build-arg MODEL=ollama
+podman build -t ollama-server .  --build-arg PULL_MODEL_BY_DEFAULT=true --build-arg MODEL=llama2
 ```
 
-Above will pull the model and embed inside the container for faster startup 
+Above will pull the model and embed inside the container for faster startup.
 
-##### Step 2: Build the s-pilot container
+##### Build the s-pilot container
 
 Execute the below commands from the project root:
 
  ```bash
-podman built -t spilot:latest . 
+podman build -t spilot:latest . 
 ```
-
-##### Step 3: Start ollama and s-pilot
-
-Execute the below commands from the project root:
-
- ```bash
- mkdir models #cache directory for downloaded models :)
-podman compose up -d
-```
-
+> Use podman tag and podman push to push the image to the registry.
 
 ## Usage
-
 ### Start
 
 #### Chat Mode
@@ -165,7 +170,6 @@ podman compose up -d
 
   <<You>>
   ```
-
 #### Pipe Mode
   - You can also use it in pipe mode:
   ```shell
