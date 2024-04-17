@@ -15,7 +15,7 @@ Also, support with local LLm from `ollma`.
 - Pass the input prompt with, as a script parameter or normal chat mode
 - List all available models 
 - Set OpenAI request parameters
-- Generate a command and run it in terminal
+- Generate a command and run it in terminal, and can use `code chat mode` easy to interact 
 - Easy to set the config
 
 ## Disclaimer
@@ -124,6 +124,9 @@ This script relies on curl for the requests to the api and jq to parse the json 
   ```
 
 #### Script Parameters
+  - Code chat mode
+    ![code_chat](https://github.com/reid41/shell-pilot/assets/25558653/b24dac9e-e50a-4513-8235-c4e358c182ad)
+
   - Help with `h`, `-h`, `--help`:
 
   -  Chat mode with initial prompt:
