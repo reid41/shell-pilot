@@ -1,6 +1,6 @@
-# !/bin/bash
+#!/bin/bash
 # set -x
-SHELL_PILOT_CONFIG_PATH="/usr/local/bin"
+SHELL_PILOT_CONFIG_PATH="/usr/local/bin/"
 COMMON_CONFIG_FILE="${SHELL_PILOT_CONFIG_PATH}/spilot_common.sh"
 source $COMMON_CONFIG_FILE
 
@@ -78,6 +78,9 @@ Options:
                              its previous answers. It also makes models
                              aware of todays date and what data it was trained
                              on.
+  cc, -cc, --code-chat       This is a very handy feature, which allows you to use shellpilot
+                             completions directly in your terminal, without the need to type cmd
+							 to chat.
 
 EOF
 }
@@ -385,6 +388,23 @@ get_system_info() {
     echo "$system_info"
 }
 
+handle_input(){
+    local input=$1
+	system_info=$(get_system_info)
+	request_prompt="System info: ${system_info}\n${COMMAND_GENERATION_PROMPT}\nCommand request: ${input}"
+	build_user_chat_message "$request_prompt"
+	response=$(request_to_chat "$chat_message")
+	handle_error "$response"
+	if [[ "$USE_API" == "ollama" ]]; then
+		response_data=$(echo $response | jq -r '.message.content')
+	elif [[ "$USE_API" == "openai" ]]; then
+		response_data=$(echo $response | jq -r '.choices[].message.content')
+	fi
+	add_assistant_response_to_chat_message "$(escape "$response_data")"
+	execute_cmd=$(echo "$response_data" | sed 's/[`$]//g')
+    echo "$execute_cmd"
+}
+
 
 # parse command line arguments
 while [[ "$#" -gt 0 ]]; do
@@ -458,6 +478,44 @@ while [[ "$#" -gt 0 ]]; do
 	c | -c | --chat-context)
 		update_config "$2" "CONTEXT"
 		check_the_setting "chat context"
+		;;
+	cc | -cc | --code-chat)
+		# 初始化指示用户可以输入的信息
+		echo "Starting code chat mode..."
+
+		while true; do
+			# 显示输入提示，并允许用户输入
+			echo -ne "\n\033[97m[You description(quit|q)]: \033[0m"
+			# echo -n "Enter your command: "
+			# 读取用户输入
+			read command
+
+			# 检查是否输入了退出命令
+			if [[ "$command" == "quit" ||  "$command" == "q" ]]; then
+				echo "Exiting..."
+				break
+			fi
+
+			# 清除当前行 - 光标回到行首，然后清空该行
+			echo -ne "\033[1A\033[K"
+
+			# 调用处理函数，处理输入的命令
+			processed_command=$(handle_input "$command")
+
+			# 如果命令不为空，则允许用户确认或编辑该命令
+			if [[ ! -z "$processed_command" ]]; then
+				read -e -p "Confirm or edit the code(or leave empty to skip): " -i "$processed_command" final_command
+				echo -ne "\033[1A\033[K" # 清除编辑行
+				if [[ ! -z "$final_command" ]]; then
+					echo -ne "Executing: $final_command\r" # 显示执行命令
+					sleep 1 # 短暂延迟让用户看到正在执行的命令
+					echo -ne "\033[K" # 清除执行命令行
+					echo $final_command # 打印最终确认的命令
+					eval "$final_command" # 执行最终的命令
+				fi
+			fi
+		done
+		exit 0
 		;;
 	cmp | -cmp | --change-model-provider)
 		# check if the model provider is valid
@@ -572,10 +630,8 @@ while $running; do
 		escaped_prompt=${escaped_prompt#cmd:}
 		system_info=$(get_system_info)
 		request_prompt="System info: ${system_info}\n${COMMAND_GENERATION_PROMPT}\nCommand request: ${escaped_prompt}"
-		# request_prompt=${COMMAND_GENERATION_PROMPT}${system_info}${escaped_prompt}
 		build_user_chat_message "$request_prompt"
 		response=$(request_to_chat "$chat_message")
-		# response=$(request_to_chat_ollama "$chat_message")
 		handle_error "$response"
 		if [[ "$USE_API" == "ollama" ]]; then
 			response_data=$(echo $response | jq -r '.message.content')
