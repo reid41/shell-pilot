@@ -125,7 +125,7 @@ This script relies on curl for the requests to the api and jq to parse the json 
 
 #### Script Parameters
   - Code chat mode
-    ![code_chat](https://github.com/reid41/shell-pilot/assets/25558653/b24dac9e-e50a-4513-8235-c4e358c182ad)
+  ![code-chat](https://github.com/reid41/shell-pilot/assets/25558653/58eee738-3f54-49c5-a1bb-1ebb87b2f1e5)
 
   - Help with `h`, `-h`, `--help`:
 
