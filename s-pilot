@@ -437,6 +437,55 @@ validate_temperature() {
 
 }
 
+# Function to enable the code chat mode
+code_chat_function(){
+	# if the code chat mode is enabled, the user can enter the command directly
+		echo "Starting code chat mode..."
+
+		while true; do
+			# show the user a prompt to enter the command
+			echo -ne "\n\033[97m[You description(quit|q)]: \033[0m"
+			# echo -n "Enter your command: "
+			# read the command from the user
+			read command
+
+			# check if the user wants to quit
+			if [[ "$command" == "quit" ||  "$command" == "q" ]]; then
+				echo "Exiting..."
+				break
+			fi
+
+			# clear the previous lineq
+			echo -ne "\033[1A\033[K"
+
+			system_info=$(get_system_info)
+			request_prompt="System info: ${system_info}\n${COMMAND_GENERATION_PROMPT}\nCommand request: ${command}"
+			build_user_chat_message "$request_prompt"
+			response=$(request_to_chat "$chat_message")
+			handle_error "$response"
+			if [[ "$USE_API" == "ollama" ]]; then
+				response_data=$(echo $response | jq -r '.message.content')
+			elif [[ "$USE_API" == "openai" ]]; then
+				response_data=$(echo $response | jq -r '.choices[].message.content')
+			fi
+			add_assistant_response_to_chat_message "$(escape "$response_data")"
+			execute_cmd=$(echo "$response_data" | sed 's/[`$]//g')
+
+			# if the processed command is not empty, ask the user to confirm or edit the command
+			if [[ ! -z "$execute_cmd" ]]; then
+				read -e -p "Confirm or edit the code(or leave empty to skip): " -i "$execute_cmd" final_command
+				echo -ne "\033[1A\033[K" # clear the previous line
+				if [[ ! -z "$final_command" ]]; then
+					echo -ne "Executing: $final_command\r" # show the command that will be executed
+					sleep 1 # wait for 1 second
+					echo -ne "\033[K" # clear the line
+					echo $final_command # print the command
+					eval "$final_command" # execute the command
+				fi
+			fi
+		done
+}
+
 # parse command line arguments
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
@@ -530,41 +579,7 @@ while [[ "$#" -gt 0 ]]; do
 		check_the_setting "chat context"
 		;;
 	cc | -cc | --code-chat)
-		# if the code chat mode is enabled, the user can enter the command directly
-		echo "Starting code chat mode..."
-
-		while true; do
-			# show the user a prompt to enter the command
-			echo -ne "\n\033[97m[You description(quit|q)]: \033[0m"
-			# echo -n "Enter your command: "
-			# read the command from the user
-			read command
-
-			# check if the user wants to quit
-			if [[ "$command" == "quit" ||  "$command" == "q" ]]; then
-				echo "Exiting..."
-				break
-			fi
-
-			# clear the previous lineq
-			echo -ne "\033[1A\033[K"
-
-			# call the handle_input function to process the command
-			processed_command=$(handle_input "$command")
-
-			# if the processed command is not empty, ask the user to confirm or edit the command
-			if [[ ! -z "$processed_command" ]]; then
-				read -e -p "Confirm or edit the code(or leave empty to skip): " -i "$processed_command" final_command
-				echo -ne "\033[1A\033[K" # clear the previous line
-				if [[ ! -z "$final_command" ]]; then
-					echo -ne "Executing: $final_command\r" # show the command that will be executed
-					sleep 1 # wait for 1 second
-					echo -ne "\033[K" # clear the line
-					echo $final_command # print the command
-					eval "$final_command" # execute the command
-				fi
-			fi
-		done
+		code_chat_function
 		exit 0
 		;;
 	cmp | -cmp | --change-model-provider)
