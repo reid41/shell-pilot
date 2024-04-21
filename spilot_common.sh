@@ -36,4 +36,4 @@ MODEL_OLLAMA=llama2
 CONTEXT=false
 MULTI_LINE_PROMPT=false
 ENABLE_DANGER_FLAG=false
-
+DANGEROUS_COMMANDS=("rm" ">" "mv" "mkfs" ":(){:|:&};" "dd" "chmod" "wget" "curl")
