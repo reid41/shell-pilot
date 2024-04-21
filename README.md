@@ -12,7 +12,7 @@ Also, support with local LLm from `ollma`.
 - Use the official chatgpt model with the ✨ [official ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis) ✨ from the terminal
 - View your history
 - Chat context, GPT remembers previous chat questions and answers
-- Pass the input prompt with, as a script parameter or normal chat mode
+- Pass the input prompt with, as a script parameter or normal chat mode(bash version: 4.0+)
 - List all available models 
 - Set OpenAI request parameters
 - Generate a command and run it in terminal, and can use `code chat mode` easy to interact 
