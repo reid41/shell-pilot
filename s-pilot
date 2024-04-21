@@ -551,7 +551,7 @@ while [[ "$#" -gt 0 ]]; do
 		echo
 		grep SYSTEM_PROMPT -A 1 -B 2 $COMMON_CONFIG_FILE
 		echo
-		tail -9 $COMMON_CONFIG_FILE
+		tail -10 $COMMON_CONFIG_FILE
 		exit 0
 		;;
 	lm | -lm | --list-models)
@@ -708,11 +708,10 @@ while $running; do
 		if [[ "$prompt" =~ ^cmd: ]]; then
 			echo -e "$OVERWRITE_PROCESSING_LINE"
 			echo -e "${SHELLPILOT_CYAN_LABEL} ${response_data}" | fold -s -w $COLUMNS
-			dangerous_commands=("rm" ">" "mv" "mkfs" ":(){:|:&};" "dd" "chmod" "wget" "curl")
 			# Initially, consider no dangerous command found
 			DANGER_CMD_FOUND=false
 
-			for dangerous_command in "${dangerous_commands[@]}"; do
+			for dangerous_command in "${DANGEROUS_COMMANDS[@]}"; do
 				if [[ "$response_data" == *"$dangerous_command"* ]]; then
 					echo -e "\033[33mWarning: This command can change your file system or download external scripts & data.\nPlease do not execute code that you don't understand completely.\033[0m"
 					DANGER_CMD_FOUND=true
