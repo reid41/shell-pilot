@@ -49,6 +49,8 @@ Commands:
 Options:
   cmp, -cmp, --change-model-provider   Change the model provider between OpenAI and Ollama
 
+  e, -e, --edit                        Edit the configuration file directly
+
   ip, -ip, --init-prompt               Provide initial chat prompt to use in context
 
   ipf, -ipf --init-prompt-from-file    Provide initial prompt from file
@@ -388,6 +390,8 @@ get_system_info() {
     echo "$system_info"
 }
 
+
+# Function to handle the input command for chat mode
 handle_input(){
     local input=$1
 	system_info=$(get_system_info)
@@ -405,11 +409,48 @@ handle_input(){
     echo "$execute_cmd"
 }
 
+# check if the input value is empty
+validate_not_empty() {
+    local input_value="$1"
+    
+    if [[ -z "$input_value" ]]; then
+        echo "Error: The input cannot be empty."
+        exit 1
+    else
+        return 0 
+    fi
+}
+
+# Function to validate the temperature value
+validate_temperature() {
+    local input_value="$1"
+    
+    # check if the input value is a number between 0 and 1
+    if [[ "$input_value" =~ ^[0-9]+(\.[0-9]+)?$ ]] && (( $(echo "$input_value >= 0 && $input_value <= 1" | bc -l) )); then
+        # temperature is valid
+        return 0
+    else
+        # temperature is invalid
+        echo "Invalid: temperature value must be between 0 and 1 inclusive."
+        exit 1 
+    fi
+
+}
 
 # parse command line arguments
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
+	e | -e | --edit)
+		# check vi is installed
+		if ! command -v vi &>/dev/null; then
+			echo "Error: vi is not installed. Please install vi or set the EDITOR environment variable."
+			exit 1
+		fi
+		/usr/bin/vi $COMMON_CONFIG_FILE
+		exit 0
+		;;
 	ip | -ip | --init-prompt)
+		validate_not_empty "$2"
 		CHAT_INIT_PROMPT="$2"
 		SYSTEM_PROMPT="$2"
 		CONTEXT=true
@@ -417,6 +458,7 @@ while [[ "$#" -gt 0 ]]; do
 		shift
 		;;
 	ipf | -ipf | --init-prompt-from-file)
+		validate_not_empty "$2"
 		CHAT_INIT_PROMPT=$(cat "$2")
 		SYSTEM_PROMPT=$(cat "$2")
 		CONTEXT=true
@@ -424,6 +466,7 @@ while [[ "$#" -gt 0 ]]; do
 		shift
 		;;
 	p | -p | --prompt)
+		validate_not_empty "$2"
 		prompt="$2"
 		# get the pipeline result to the -p
 		# e.g. cat error.log | ./spilot.sh -p "check any errors"
@@ -438,15 +481,19 @@ while [[ "$#" -gt 0 ]]; do
 		shift
 		;;
 	pf | -pf | --prompt-from-file)
+		validate_not_empty "$2"
 		prompt=$(cat "$2")
 		shift
 		shift
 		;;
 	t | -t | --temperature)
+		validate_not_empty "$2"
+		validate_temperature "$2"
 		update_config "$2" "TEMPERATURE"
 		check_the_setting "temperature" "TEMPERATURE"
 		;;
 	mt | -mt | --max-tokens)
+		validate_not_empty "$2"
 		update_config "$2" "MAX_TOKENS"
 		check_the_setting "max tokens" "MAX_TOKENS"
 		;;
@@ -463,6 +510,7 @@ while [[ "$#" -gt 0 ]]; do
 		exit 0
 		;;
 	m | --model)
+		validate_not_empty "$2"
 		if [[ "$USE_API" == "openai" ]]; then
 			update_config "$2" "MODEL_OPENAI"
 			check_the_setting "openai model" "MODEL_OPENAI"
@@ -472,10 +520,12 @@ while [[ "$#" -gt 0 ]]; do
 		fi
 		;;
 	mlp | -mlp | --multi-line-prompt)
+		validate_not_empty "$2"
 		update_config "$2" "MULTI_LINE_PROMPT"
 		check_the_setting "multi-line prompt" "MULTI_LINE_PROMPT"
 		;;
 	c | -c | --chat-context)
+		validate_not_empty "$2"
 		update_config "$2" "CONTEXT"
 		check_the_setting "chat context"
 		;;
@@ -505,7 +555,7 @@ while [[ "$#" -gt 0 ]]; do
 			# if the processed command is not empty, ask the user to confirm or edit the command
 			if [[ ! -z "$processed_command" ]]; then
 				read -e -p "Confirm or edit the code(or leave empty to skip): " -i "$processed_command" final_command
-				echo -ne "\033[1A\033[K" # 清除编辑行
+				echo -ne "\033[1A\033[K" # clear the previous line
 				if [[ ! -z "$final_command" ]]; then
 					echo -ne "Executing: $final_command\r" # show the command that will be executed
 					sleep 1 # wait for 1 second
@@ -518,6 +568,7 @@ while [[ "$#" -gt 0 ]]; do
 		exit 0
 		;;
 	cmp | -cmp | --change-model-provider)
+		validate_not_empty "$2"
 		# check if the model provider is valid
 		if [[ "$2" == "openai" || "$2" == "ollama" ]]; then
 			# update the model provider
