@@ -390,25 +390,6 @@ get_system_info() {
     echo "$system_info"
 }
 
-
-# Function to handle the input command for chat mode
-handle_input(){
-    local input=$1
-	system_info=$(get_system_info)
-	request_prompt="System info: ${system_info}\n${COMMAND_GENERATION_PROMPT}\nCommand request: ${input}"
-	build_user_chat_message "$request_prompt"
-	response=$(request_to_chat "$chat_message")
-	handle_error "$response"
-	if [[ "$USE_API" == "ollama" ]]; then
-		response_data=$(echo $response | jq -r '.message.content')
-	elif [[ "$USE_API" == "openai" ]]; then
-		response_data=$(echo $response | jq -r '.choices[].message.content')
-	fi
-	add_assistant_response_to_chat_message "$(escape "$response_data")"
-	execute_cmd=$(echo "$response_data" | sed 's/[`$]//g')
-    echo "$execute_cmd"
-}
-
 # check if the input value is empty
 validate_not_empty() {
     local input_value="$1"
