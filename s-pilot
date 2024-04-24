@@ -112,61 +112,92 @@ convert_size() {
     fi
 }
 
-# request to openAI/ollama API models endpoint. Returns a list of models
-# takes no input parameters
-list_models() {
-	if [[ "$USE_API" == "ollama" ]]
-	then
-		# get the list of models
-		curl -s http://${OLLAMA_SERVER_IP}:11434/api/tags | jq -c '.models[]' | while read -r model; do
-
-			# show processing label
-			echo -ne "$OVERWRITE_PROCESSING_LINE"
-			echo -ne "$PROCESSING_LABEL"
-			sleep 0.5 # set delay to avoid flickering
-			echo -ne "$OVERWRITE_PROCESSING_LINE"
-
-			# get the model details
-			name=$(echo "$model" | jq -r '.name')
-			size=$(echo "$model" | jq -r '.size')
-			format=$(echo "$model" | jq -r '.details.format')
-			parameter_size=$(echo "$model" | jq -r '.details.parameter_size')
-			quantization_level=$(echo "$model" | jq -r '.details.quantization_level')
-
-			# convert size to human readable format
-			converted_size=$(convert_size $size)
-
-			# build a new JSON object with the model details
-			new_json=$(jq -n --arg name "$name" \
-							--arg size "$converted_size" \
-							--arg format "$format" \
-							--arg parameter_size "$parameter_size" \
-							--arg quantization_level "$quantization_level" \
-							'{
-								name: $name,
-								size: $size,
-								format: $format,
-								parameter_size: $parameter_size,
-								quantization_level: $quantization_level
-							}')
-			
-			echo "$new_json"
+# show the list of models	
+show_llm_models_output(){
+		# cache file is present, read from the cache
+	echo -ne "\n\033[36mReading from the cache and the cache_max_age is: ${CACHE_MAX_AGE} seconds, please check the config file if need to reset!\n\033[0m"
+	if [[ "$USE_API" == "ollama" ]]; then
+		cat "$LIST_MODELS_CACHE_FILE" | jq -c '.' | while read -r model; do
+			format_and_display "$model"
 		done
-
-	elif [[ "$USE_API" == "openai" ]]
-	then
-		models_response=$(curl https://api.openai.com/v1/models \
-			-sS \
-			-H "Authorization: Bearer $OPENAI_KEY")
-		handle_error "$models_response"
-		models_data=$(echo $models_response | jq -r -C '.data[] | {id, owned_by, created}')
-		echo -e "$OVERWRITE_PROCESSING_LINE"
-		echo -e "${SHELLPILOT_CYAN_LABEL}This is a list of models currently available at OpenAI API:\n ${models_data}"
-	else
-		echo "Error: No API specified".
-		exit 1
+	elif [[ "$USE_API" == "openai" ]]; then
+		cat "$LIST_MODELS_CACHE_FILE"
 	fi
 }
+
+# list the models main function
+list_models() {
+    local cache_file="$LIST_MODELS_CACHE_FILE"
+    local max_age=${CACHE_MAX_AGE}
+
+    # Check if the cache file exists and is not empty
+    if [[ -f "$cache_file" ]] && [[ -s "$cache_file" ]]; then
+        # Get the last modified time based on the OS
+        if [[ "$(uname)" == "Darwin" ]]; then
+            local last_modified=$(stat -f %m "$cache_file")
+        else
+            local last_modified=$(stat -c %Y "$cache_file")
+        fi
+
+        local current_time=$(date +%s)
+        local age=$((current_time - last_modified))
+
+        # Check if the cache is not older than the max age
+        if (( age < max_age )); then
+            # Cache is valid, read from the cache
+            show_llm_models_output
+            exit 0
+        fi
+    fi
+
+    # Cache is expired or does not exist, fetch the models
+    fetch_and_cache_models "$cache_file"
+    # Read from the new cache
+    show_llm_models_output
+}
+
+# fetch and cache the models
+fetch_and_cache_models() {
+    local cache_file=$1
+	echo -ne "\n\033[36mFetching it from the API and store it for cache...\n\033[0m"
+    if [[ "$USE_API" == "ollama" ]]; then
+        curl -s http://${OLLAMA_SERVER_IP}:11434/api/tags | jq -c '.models[]' > "$cache_file"
+    elif [[ "$USE_API" == "openai" ]]; then
+        local models_response=$(curl https://api.openai.com/v1/models \
+            -sS \
+            -H "Authorization: Bearer $OPENAI_KEY")
+        handle_error "$models_response"
+        echo $models_response | jq -r -C '.data[] | {id, owned_by, created}' > "$cache_file"
+    else
+        echo "Error: No API specified."
+        exit 1
+    fi
+}
+
+# format and display the model details
+format_and_display() {
+    local model=$1
+    local name=$(echo "$model" | jq -r '.name')
+    local size=$(echo "$model" | jq -r '.size')
+    local format=$(echo "$model" | jq -r '.details.format')
+    local parameter_size=$(echo "$model" | jq -r '.details.parameter_size')
+    local quantization_level=$(echo "$model" | jq -r '.details.quantization_level')
+    local converted_size=$(convert_size $size)
+
+    echo -ne "$OVERWRITE_PROCESSING_LINE"
+    echo -ne "$PROCESSING_LABEL"
+    sleep 0.5  # set delay to avoid flickering
+    echo -ne "$OVERWRITE_PROCESSING_LINE"
+
+    # build a new JSON object with the model details
+    jq -n --arg name "$name" \
+          --arg size "$converted_size" \
+          --arg format "$format" \
+          --arg parameter_size "$parameter_size" \
+          --arg quantization_level "$quantization_level" \
+          '{name: $name, size: $size, format: $format, parameter_size: $parameter_size, quantization_level: $quantization_level}'
+}
+
 
 # request to OpenAI API/ollama completions endpoint function
 # $1 should be the request prompt
@@ -569,6 +600,8 @@ while [[ "$#" -gt 0 ]]; do
 		if [[ "$2" == "openai" || "$2" == "ollama" ]]; then
 			# update the model provider
 			update_config "$2" "USE_API"
+			# clean the cache
+			rm -f ${LIST_MODELS_CACHE_FILE}
 			check_the_setting "model provider" "USE_API"
 		else
 			# print error message and exit if the model provider is invalid
