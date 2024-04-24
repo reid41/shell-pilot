@@ -7,6 +7,10 @@ PROCESSING_LABEL="\n\033[92m  Processing... \033[0m\033[0K\r"
 OVERWRITE_PROCESSING_LINE="             \033[0K\r"
 COLUMNS=$(tput cols)
 
+# the list models cache setting
+CACHE_MAX_AGE=3600
+LIST_MODELS_CACHE_FILE="/tmp/models_list.cache"
+
 # Configuration settings
 USE_API=ollama
 CURRENT_DATE=$(date +%m/%d/%Y)
