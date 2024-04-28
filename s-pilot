@@ -77,6 +77,8 @@ Options:
 
   h, -h, --help                        list available options and usage
 
+  v, -v, --version                     Show the version of the script
+
   cr, -cr, --chat-recording            Enable chat recording, which will save all the chat history in a file
 
   c, -c, --chat-context      For models that do not support chat context by
