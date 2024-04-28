@@ -1,6 +1,6 @@
 <h1>shell-pilot</h1>
 
-A version of the [chatGPT-shell-cli](https://github.com/0xacx/chatGPT-shell-cli) library , modified to support `Ollama` and work with local LLM, and improve some features.
+An enhanced  version of the [chatGPT-shell-cli](https://github.com/0xacx/chatGPT-shell-cli) library , this fork not only supports Ollama and integrates with local LLMs but also introduces significant improvements and additional functionalities. These enhancements encompass a range of optimizations and feature expansions that elevate the utility and efficiency of the original tool.
 
 A simple, lightweight shell script to use `OpenAI(chatGPT and DALL-E)` or `Ollama` from the terminal without installing python or node.js. The script uses the official ChatGPT model `gpt-3.5-turbo` with the OpenAI API endpoint `/chat/completions`. You can also use the new `gpt-4` model, if you have access.  
 Also, support with local LLm from `ollma`.
@@ -8,7 +8,7 @@ Also, support with local LLm from `ollma`.
 
 ## Features
 
-- Based on [Ollama](https://ollama.com/) to setup a local LLM repository, work with [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
+- Based on [Ollama](https://ollama.com/) to setup a local LLM repository(`support llama3`), work with [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
 - Use the official chatgpt model with the ✨ [official ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis) ✨ from the terminal
 - View your history and session persistence
 - Chat context, GPT remembers previous chat questions and answers
