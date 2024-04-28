@@ -69,9 +69,15 @@ Options:
 
   lm, -lm, --list-models               List available openAI/ollama models
 
+  lr, -lr, --list-chat-record          List chat record files
+
+  dr, -dr, --delete-record             Delete chat record file
+
   m, -m, --model                       Update the Model to use
 
   h, -h, --help                        list available options and usage
+
+  cr, -cr, --chat-recording            Enable chat recording, which will save all the chat history in a file
 
   c, -c, --chat-context      For models that do not support chat context by
                              default (all models except gpt-3.5-turbo and
@@ -129,6 +135,8 @@ show_llm_models_output(){
 list_models() {
     local cache_file="$LIST_MODELS_CACHE_FILE"
     local max_age=${CACHE_MAX_AGE}
+
+	[[ ! -d $SPILOT_FILES_DEFAULT_DIR ]] && mkdir -p $SPILOT_FILES_DEFAULT_DIR
 
     # Check if the cache file exists and is not empty
     if [[ -f "$cache_file" ]] && [[ -s "$cache_file" ]]; then
@@ -451,8 +459,17 @@ validate_temperature() {
 
 # Function to enable the code chat mode
 code_chat_function(){
-	# if the code chat mode is enabled, the user can enter the command directly
+		# if the code chat mode is enabled, the user can enter the command directly
 		echo "Starting code chat mode..."
+
+		# check if the chat record flag is enabled
+		if [[ "$chat_record_flag" == "true" ]]; then
+			if [ -s "${CHAT_RECORD_FILE}" ]; then
+				# Loading existing session data...
+				chat_message=$(cat "${CHAT_RECORD_FILE}")
+				
+			fi
+		fi
 
 		while true; do
 			# show the user a prompt to enter the command
@@ -463,6 +480,9 @@ code_chat_function(){
 
 			# check if the user wants to quit
 			if [[ "$command" == "quit" ||  "$command" == "q" ]]; then
+				if [[ "$chat_record_flag" == "true" ]]; then
+					echo "$chat_message" > "${CHAT_RECORD_FILE}"
+				fi
 				echo "Exiting..."
 				break
 			fi
@@ -481,7 +501,9 @@ code_chat_function(){
 				response_data=$(echo $response | jq -r '.choices[].message.content')
 			fi
 			add_assistant_response_to_chat_message "$(escape "$response_data")"
-			execute_cmd=$(echo "$response_data" | sed 's/[`$]//g')
+			# execute_cmd=$(echo "$response_data" | sed 's/[`$]//g')
+			execute_cmd=$(echo "$response_data" | sed 's/[`$]//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+			execute_cmd=$(echo "$execute_cmd" | xargs)
 
 			# if the processed command is not empty, ask the user to confirm or edit the command
 			if [[ ! -z "$execute_cmd" ]]; then
@@ -498,13 +520,32 @@ code_chat_function(){
 		done
 }
 
+# check if the chat record flag is enabled
+chat_record_flag=false
+
 # parse command line arguments
 while [[ "$#" -gt 0 ]]; do
 	case $1 in
+	cr | -cr | --chat-record)
+		validate_not_empty "$2"
+		# Chat recording is enabled, the chat history will be saved in the specified session file.
+		chat_record_flag=true
+		CHAT_RECORD_ID=$2
+		CHAT_RECORD_FILE=${SPILOT_FILES_DEFAULT_DIR}/${CHAT_RECORD_ID}-chat_record.spilot
+		if [ ! -d "$SPILOT_FILES_DEFAULT_DIR" ]; then
+			mkdir -p $SPILOT_FILES_DEFAULT_DIR
+		fi
+		# create a new session file if it does not exist
+		# Starting a new session
+		if [ ! -f "${CHAT_RECORD_FILE}" ]; then
+			touch "${CHAT_RECORD_FILE}"
+    	fi
+		shift 2
+		;;
 	e | -e | --edit)
 		# check vi is installed
 		if ! command -v vi &>/dev/null; then
-			echo "Error: vi is not installed. Please install vi or set the EDITOR environment variable."
+			echo -e "\033[33m==> Error: vi is not installed. Please install vi or set the EDITOR environment variable.\033[0m"
 			exit 1
 		fi
 		/usr/bin/vi $COMMON_CONFIG_FILE
@@ -515,16 +556,14 @@ while [[ "$#" -gt 0 ]]; do
 		CHAT_INIT_PROMPT="$2"
 		SYSTEM_PROMPT="$2"
 		CONTEXT=true
-		shift
-		shift
+		shift 2
 		;;
 	ipf | -ipf | --init-prompt-from-file)
 		validate_not_empty "$2"
 		CHAT_INIT_PROMPT=$(cat "$2")
 		SYSTEM_PROMPT=$(cat "$2")
 		CONTEXT=true
-		shift
-		shift
+		shift 2
 		;;
 	p | -p | --prompt)
 		validate_not_empty "$2"
@@ -538,14 +577,12 @@ while [[ "$#" -gt 0 ]]; do
 			done
 			prompt="$prompt $piped_input"
     	fi
-		shift
-		shift
+		shift 2
 		;;
 	pf | -pf | --prompt-from-file)
 		validate_not_empty "$2"
 		prompt=$(cat "$2")
-		shift
-		shift
+		shift 2
 		;;
 	t | -t | --temperature)
 		validate_not_empty "$2"
@@ -570,6 +607,43 @@ while [[ "$#" -gt 0 ]]; do
 		list_models
 		exit 0
 		;;
+	lr | -lr | --list-chat-record)
+	   CHAT_RECORD_FILE_NAME=$2
+	   if [ -n "$CHAT_RECORD_FILE_NAME" ]; then
+	        CHAT_RECORD_FILE=${SPILOT_FILES_DEFAULT_DIR}/${CHAT_RECORD_FILE_NAME}-chat_record.spilot
+			if [[ -f "${CHAT_RECORD_FILE}" && -s "${CHAT_RECORD_FILE}" ]]; then
+				echo -e "\033[36m==> Here is the chat record file content:\033[0m"
+				# cat "${CHAT_RECORD_FILE}" 
+				# pretty print the json file
+				awk 'BEGIN {print "["} NR > 1 {print line ","} {line = $0} END {print line "]"}' "${CHAT_RECORD_FILE}" | jq .
+
+
+			else
+				echo -e "\033[36m==> Error: The chat record file does not exist or the name is not provided or empty.\033[0m"
+				exit 1
+			fi 
+	   else
+	   	   	echo -e "\033[36m==> Here are the chat record files[<name>-chat_record.spilot]:\033[0m"
+	   		ls -l $SPILOT_FILES_DEFAULT_DIR | grep chat_record.spilot
+	   fi
+	   exit 0
+	   ;;
+	dr | -dr | --delete-record)
+       CHAT_RECORD_FILE_NAME=$2
+       if [ -z "$CHAT_RECORD_FILE_NAME" ]; then
+           echo -e "\033[31mError: You must provide a file name to delete.\033[0m"
+           exit 1
+       fi
+       CHAT_RECORD_FILE="${SPILOT_FILES_DEFAULT_DIR}/${CHAT_RECORD_FILE_NAME}-chat_record.spilot"
+       if [[ -f "${CHAT_RECORD_FILE}" ]]; then
+           rm  -i "${CHAT_RECORD_FILE}"
+           echo -e "\033[32mFile ${CHAT_RECORD_FILE} has been deleted successfully.\033[0m"
+		   exit 0
+       else
+           echo -e "\033[31mError: ${CHAT_RECORD_FILE} file does not exist.\033[0m"
+           exit 1
+       fi
+       ;;
 	m | --model)
 		validate_not_empty "$2"
 		if [[ "$USE_API" == "openai" ]]; then
@@ -609,6 +683,10 @@ while [[ "$#" -gt 0 ]]; do
 			exit 1
 		fi
 		;;
+	v | -v | --version)
+		echo -ne "\033[36m[Shell Pilot Version]: ${SHELL_PILOT_VERSION}\033[0m\n"
+		exit 0
+		;;
 	h | -h | --help)
 		usage
 		exit 0
@@ -627,13 +705,15 @@ if [ $MULTI_LINE_PROMPT = true ]; then
 fi
 
 # create history file
-if [ ! -f ~/.chatgpt_history ]; then
-	touch ~/.chatgpt_history
-	chmod 600 ~/.chatgpt_history
+[[ -d $SPILOT_FILES_DEFAULT_DIR ]] || mkdir -p $SPILOT_FILES_DEFAULT_DIR
+SIPLOT_HISTORY_FILE=$SPILOT_FILES_DEFAULT_DIR/.spilot_history
+if [ ! -f $SIPLOT_HISTORY_FILE ]; then
+	touch $SIPLOT_HISTORY_FILE
+	chmod 600 $SIPLOT_HISTORY_FILE
 fi
 
-running=true
 # check input source and determine run mode
+running=true
 
 # prompt from argument, run on pipe mode (run once, no chat)
 if [ -n "$prompt" ]; then
@@ -663,16 +743,22 @@ while $running; do
 		fi
 	else
 		# set vars for pipe mode
+		# p option run this
 		prompt=${pipe_mode_prompt}
 		running=false
 		SHELLPILOT_CYAN_LABEL=""
 	fi
 
+	# exit for chat mode
 	if [[ $prompt =~ ^(e|q)$ ]]; then
 		running=false
+		# save the chat record for chat mode
+		if [[ "$chat_record_flag" == "true" ]]; then
+			echo "$chat_message" > "${CHAT_RECORD_FILE}"
+		fi
 	elif [[ "$prompt" == "history" ]]; then
 		echo -ne "$OVERWRITE_PROCESSING_LINE"
-		echo -e "\n$(cat ~/.chatgpt_history)"
+		echo -e "\n$(cat $SIPLOT_HISTORY_FILE)"
 	elif [[ "$prompt" == "models" ]]; then
 		list_models
 	elif [[ "$prompt" =~ ^model: ]]; then
@@ -706,6 +792,14 @@ while $running; do
 		fi
 	elif [[ "$prompt" =~ ^cmd: ]]; then
 		# escape quotation marks, new lines, backslashes...
+		# enable chat record flag
+		if [[ "$chat_record_flag" == "true" ]]; then
+			if [ -s "${CHAT_RECORD_FILE}" ]; then
+				# Loading existing session data...
+				chat_message=$(cat "${CHAT_RECORD_FILE}")				
+			fi
+		fi
+
 		escaped_prompt=$(escape "$prompt")
 		escaped_prompt=${escaped_prompt#cmd:}
 		system_info=$(get_system_info)
@@ -753,18 +847,24 @@ while $running; do
 				echo
 				echo -e "\033[36mInfo: Execution of potentially dangerous commands has been disabled.\033[0m"
 
-
 			fi
 		fi
 		add_assistant_response_to_chat_message "$(escape "$response_data")"
 
 		timestamp=$(date +"%Y-%m-%d %H:%M")
-		echo -e "$timestamp $prompt \n$response_data \n" >>~/.chatgpt_history
+		echo -e "$timestamp $prompt \n$response_data \n" >> $SIPLOT_HISTORY_FILE
 
 	elif [[ "$MODEL_OPENAI" =~ ^gpt- || "$USE_API" == "ollama" ]]; then
 		# escape quotation marks, new lines, backslashes...
-		request_prompt=$(escape "$prompt")
+		# enable chat record flag
+		if [[ "$chat_record_flag" == "true" ]]; then
+			if [ -s "${CHAT_RECORD_FILE}" ]; then
+				# Loading existing session data...
+				chat_message=$(cat "${CHAT_RECORD_FILE}")				
+			fi
+		fi
 
+		request_prompt=$(escape "$prompt")
 		build_user_chat_message "$request_prompt"
 		response=$(request_to_chat "$chat_message")
 		handle_error "$response"
@@ -784,8 +884,13 @@ while $running; do
 		fi
 		add_assistant_response_to_chat_message "$(escape "$response_data")"
 
+		# save the chat record: p option
+		if [[ "$chat_record_flag" == "true" && "$running" == "false" ]]; then
+			echo "$chat_message" > "${CHAT_RECORD_FILE}"
+		fi
+
 		timestamp=$(date +"%Y-%m-%d %H:%M")
-		echo -e "$timestamp $prompt \n$response_data \n" >>~/.chatgpt_history
+		echo -e "$timestamp $prompt \n$response_data \n" >> $SIPLOT_HISTORY_FILE
 	else
 		# escape quotation marks, new lines, backslashes...
 		request_prompt=$(escape "$prompt")
@@ -814,6 +919,6 @@ while $running; do
 		fi
 
 		timestamp=$(date +"%Y-%m-%d %H:%M")
-		echo -e "$timestamp $prompt \n$response_data \n" >>~/.chatgpt_history
+		echo -e "$timestamp $prompt \n$response_data \n" >> $SIPLOT_HISTORY_FILE
 	fi
 done

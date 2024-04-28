@@ -10,7 +10,7 @@ Also, support with local LLm from `ollma`.
 
 - Based on [Ollama](https://ollama.com/) to setup a local LLM repository, work with [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
 - Use the official chatgpt model with the ✨ [official ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis) ✨ from the terminal
-- View your history
+- View your history and session persistence
 - Chat context, GPT remembers previous chat questions and answers
 - Pass the input prompt with, as a script parameter or normal chat mode(bash version: 4.0+)
 - List all available models 
@@ -128,6 +128,12 @@ This script relies on curl for the requests to the api and jq to parse the json 
   ![code-chat](https://github.com/reid41/shell-pilot/assets/25558653/58eee738-3f54-49c5-a1bb-1ebb87b2f1e5)
 
   - Help with `h`, `-h`, `--help`:
+
+  - Check version:
+  ```shell
+  s-pilot v
+  [Shell Pilot Version]: 1.5.5
+  ```
 
   -  Chat mode with initial prompt:
   ```shell
@@ -304,6 +310,67 @@ This script relies on curl for the requests to the api and jq to parse the json 
   Please do not execute code that you don't understand completely.
 
   Info: Execution of potentially dangerous commands has been disabled.
+  ```
+
+### Session persistence
+  - One-shot Command Mode
+  ```shell
+  # s-pilot cr test  p "please remember my lucky number is 5"
+
+  I've noted that your lucky number is 5!
+  
+  # s-pilot lr
+  ==> Here are the chat record files[<name>-chat_record.spilot]:
+  -rw-r--r--. 1 root root 149 Apr 28 10:07 test-chat_record.spilot
+
+  # s-pilot lr test
+  ==> Here is the chat record file content:
+  [
+    {
+      "role": "user",
+      "content": "please remember my lucky number is 5\n"
+    },
+    {
+      "role": "assistant",
+      "content": "I've noted that your lucky number is 5!\n"
+    }
+  ]
+
+  # s-pilot cr test  p "use my lucky number plus 20"
+
+  Using your lucky number (5) + 20 gives us... 25!
+
+
+  # s-pilot dr test
+  rm: remove regular file '/root/spilot_files_dir/test-chat_record.spilot'? y
+  File /root/spilot_files_dir/test-chat_record.spilot has been deleted successfully.
+  ```
+
+  - Interactive Session Mode
+  ```shell
+
+  # s-pilot cr test1
+  Welcome to Shell Pilot!!
+  You can quit with 'q' or 'e'.
+
+  <<You>>
+  please remember my favorite color is blue
+
+
+  <<ShellPilot>> I've made a note that your favorite color is blue!
+
+  <<You>>
+  q # quit
+
+  # s-pilot cr test1
+  Welcome to Shell Pilot!!
+  You can quit with 'q' or 'e'.
+
+  <<You>>
+  what is my favorite color?
+
+
+  <<ShellPilot>> Your favorite color is blue!
   ```
 
 ### Chat context
