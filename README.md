@@ -1,4 +1,6 @@
-<h1>shell-pilot</h1>
+<p align="center">
+  <img src="https://github.com/reid41/shell-pilot/assets/25558653/7d99c212-4b5c-456d-907d-20df16112cd5" alt="shell-pilot">
+</p>
 
 An enhanced  version of the [chatGPT-shell-cli](https://github.com/0xacx/chatGPT-shell-cli) library , this fork not only supports Ollama and integrates with local LLMs but also introduces significant improvements and additional functionalities. These enhancements encompass a range of optimizations and feature expansions that elevate the utility and efficiency of the original tool.
 
