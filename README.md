@@ -123,6 +123,30 @@ This script relies on curl for the requests to the api and jq to parse the json 
   2. April 8, 05:20:51: Error encountered during metadata download for repository
   ```
 
+#### Use Redirection Operators
+  ```shell
+
+  $ s-pilot < ss.sh
+  The output will be:
+  Hello World test
+
+  $ s-pilot p "summarize" < ss.sh
+  This is a bash script that defines and invokes a function named "Hello".
+  The function takes two arguments, $1 and $2, and prints "Hello World" followed by these arguments...
+
+  $ s-pilot <<< "what is the best way to learn shell? Provide an example"
+  The best way to learn shell scripting is through hands-on practice and tutorials. Start by
+  understanding basic commands, then move on to writing simple scripts to automate tasks...
+
+  $ s-pilot << EOF
+  > how to learn python?
+  > provide a detail example.
+  > EOF
+  To learn Python, follow these steps:
+  1. **Understand the Basics**: Start with Python syntax, data types, variables, and basic operations.
+  2. **Control Structures**: Learn about loops (for, while), if statements, and functions...
+  ```
+
 #### Script Parameters
   - Code chat mode
   ![code-chat](https://github.com/reid41/shell-pilot/assets/25558653/58eee738-3f54-49c5-a1bb-1ebb87b2f1e5)
