@@ -150,8 +150,7 @@ This script relies on curl for the requests to the api and jq to parse the json 
   ```
 
 #### Use in vi/vim
-![vi-vim](https://github.com/reid41/shell-pilot/assets/25558653/61aa1a44-0bcb-4ef0-a78a-dea09cee9bce)
-
+![vi-vim-new](https://github.com/reid41/shell-pilot/assets/25558653/f3b97c20-2861-4392-8cc8-c85ccccf2abb)
 
 #### Script Parameters
   - Code chat mode
