@@ -149,6 +149,10 @@ This script relies on curl for the requests to the api and jq to parse the json 
   2. **Control Structures**: Learn about loops (for, while), if statements, and functions...
   ```
 
+#### Use in vi/vim
+![vi-vim](https://github.com/reid41/shell-pilot/assets/25558653/61aa1a44-0bcb-4ef0-a78a-dea09cee9bce)
+
+
 #### Script Parameters
   - Code chat mode
   ![code-chat](https://github.com/reid41/shell-pilot/assets/25558653/58eee738-3f54-49c5-a1bb-1ebb87b2f1e5)
