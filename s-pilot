@@ -1,8 +1,10 @@
 #!/bin/bash
-# set -x
+#set -x
 SHELL_PILOT_CONFIG_PATH="/usr/local/bin/"
+SHELL_PILOT_PLUGINS_PATH="${SHELL_PILOT_CONFIG_PATH}/plugins"
 COMMON_CONFIG_FILE="${SHELL_PILOT_CONFIG_PATH}/spilot_common.sh"
 source $COMMON_CONFIG_FILE
+source "${SHELL_PILOT_PLUGINS_PATH}/package_version.sh"
 
 # check if the OPENAI_KEY is set
 if [[ -z "$OPENAI_KEY" && "$USE_API" == "openai" ]]; then
@@ -91,6 +93,9 @@ Options:
   cc, -cc, --code-chat       This is a very handy feature, which allows you to use shellpilot
                              completions directly in your terminal, without the need to type cmd
 							 to chat.
+
+ Plugins:
+  pv, -pv, --package-version          Check the system package version, -f for fuzzy match
 
 EOF
 }
@@ -586,6 +591,25 @@ while [[ "$#" -gt 0 ]]; do
 		prompt=$(cat "$2")
 		shift 2
 		;;
+	pv | -pv | --package-verison)
+	    echo -e "\033[36mCheck the system package version\033[0m"
+		if [ $# -lt 2 ]; then
+			echo "Usage: $0 pv [-f] <pkg1> [pkg2] ..."
+			exit 1
+		fi
+		fuzzy_option=$2
+		if [[ $fuzzy_option == "-f" ]]; then
+			fuzzy_match=1
+			shift 2
+		else
+			shift 1
+		fi
+		# Process each command line argument
+		for cmd in "$@"; do
+			generic_version_detect $cmd
+		done
+		exit 0
+	   ;;
 	t | -t | --temperature)
 		validate_not_empty "$2"
 		validate_temperature "$2"

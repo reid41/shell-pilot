@@ -55,10 +55,13 @@ echo "==> All required dependencies are installed or skipped by the user."
 
 # Define the installation path
 INSTALL_PATH="/usr/local/bin"
+PLUGINS_PATH="/usr/local/bin/plugins"
+[ ! -d $PLUGINS_PATH ] && mkdir $PLUGINS_PATH -p
 
 # Define URLs for the script and configuration file
 SHELL_PILOT_SCRIPT_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/s-pilot"
 SHELL_PILOT_COMMON_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/spilot_common.sh"
+SHELL_PILOT_PLUGINS_PV_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/plugins/package_version.sh"
 
 # Function to download shell-pilot scripts with retries
 shell_pilot_download_script() {
@@ -87,10 +90,12 @@ shell_pilot_download_script "$SHELL_PILOT_SCRIPT_URL" "${INSTALL_PATH}/s-pilot" 
 
 # Download the configuration file spilot_common.sh
 shell_pilot_download_script "$SHELL_PILOT_COMMON_URL" "${INSTALL_PATH}/spilot_common.sh" || exit 1
+shell_pilot_download_script "$SHELL_PILOT_PLUGINS_PV_URL" "${PLUGINS_PATH}/package_version.sh" || exit 1
 
 # Optionally, set execute permissions
 chmod +x "${INSTALL_PATH}/s-pilot"
 chmod +x "${INSTALL_PATH}/spilot_common.sh"
+chmod +x "${PLUGINS_PATH}/package_version.sh"
 
 echo "==> Shell Pilot installation completed."
 

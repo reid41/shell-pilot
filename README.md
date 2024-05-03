@@ -90,6 +90,7 @@ This script relies on curl for the requests to the api and jq to parse the json 
   - Download the `s-pilot` file in a directory you want
   - Add the path of `s-pilot` to your `$PATH`. You do that by adding this line to your shell profile: `export PATH=$PATH:/path/to/s-pilot`
   - Reset the `SHELL_PILOT_CONFIG_PATH` in `s-pilot` if the `spilot_common.sh` path changed
+  - Create plugins path `mkdir /path/plugins -p`, and put the plugin script into it
   - Add the OpenAI API key to your shell profile by adding this line `export OPENAI_KEY=your_key_here`
   - Add Ollama server ip address in `spilot_common.sh` for `OLLAMA_SERVER_IP` variable
 
@@ -439,3 +440,23 @@ This script relies on curl for the requests to the api and jq to parse the json 
     For Ollama: [Ollama API documentation](https://github.com/ollama/ollama/blob/main/docs/api.md)
 
 
+### Plugins
+
+  - pv: check the system package version(so far support MacOS/RHEL/CentOS/Fedora)
+  ```shell
+  $ s-pilot pv
+  Check the system package version
+  Usage: /usr/local/bin/s-pilot pv [-f] <pkg1> [pkg2] ...
+
+  $ s-pilot pv bc go xx
+  Check the system package version
+  ✔ bc version 6.5.0
+  ✔ go version 1.19.6
+  ✗ Package xx not found on macOS.
+
+  $ s-pilot pv -f usb
+  Check the system package version
+  ✔ libusb version 1.0.27
+  ✔ usb.ids version 2024.03.18
+✔ usbredir version 0.14.0
+  ```
