@@ -105,9 +105,9 @@ This script relies on curl for the requests to the api and jq to parse the json 
   cd shell-pilot/
   ```
 
-  - If you want to reset `the script path` or `output store path`, try below:
+  - If you want to reset `the script path(/usr/local/bin/ by default)` or `output store path(~/spilot_files_dir by default)`, try below:
   ```shell
-  # define the config dir
+  # define the config dir if need to reset
   new_config_path="/new/path/to/config/"
   # define the tmp or output files dir
   new_files_dir="/new/path/to/files/"
