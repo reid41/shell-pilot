@@ -98,12 +98,63 @@ This script relies on curl for the requests to the api and jq to parse the json 
 
   If you want to install it manually, all you have to do is:
 
-  - Download the `s-pilot` file in a directory you want
-  - Add the path of `s-pilot` to your `$PATH`. You do that by adding this line to your shell profile: `export PATH=$PATH:/path/to/s-pilot`
-  - Reset the `SHELL_PILOT_CONFIG_PATH` in `s-pilot` if the `spilot_common.sh` path changed
-  - Create plugins path `mkdir /path/plugins -p`, and put the plugin script into it
-  - Add the OpenAI API key to your shell profile by adding this line `export OPENAI_KEY=your_key_here`
-  - Add Ollama server ip address in `spilot_common.sh` for `OLLAMA_SERVER_IP` variable
+  - Download the shell-pilot project files in
+  ```shell
+  git clone https://github.com/reid41/shell-pilot.git
+
+  cd shell-pilot/
+  ```
+
+  - If you want to reset `the script path` or `output store path`, try below:
+  ```shell
+  # define the config dir
+  new_config_path="/new/path/to/config/"
+  # define the tmp or output files dir
+  new_files_dir="/new/path/to/files/"
+
+  # create it if new
+  [[ ! -d ${new_config_path} ]] && mkdir ${new_config_path} -p
+  [[ ! -d "${new_config_path}/plugins" ]] && mkdir ${new_config_path}/plugins -p
+  [[ ! -d ${new_files_dir} ]] && mkdir ${new_files_dir} -p
+
+  # reset it
+  sed -i "s|SHELL_PILOT_CONFIG_PATH=\"/usr/local/bin/\"|SHELL_PILOT_CONFIG_PATH=\"$new_config_path\"|" s-pilot
+  sed -i "s|SPILOT_FILES_DEFAULT_DIR=~/spilot_files_dir|SPILOT_FILES_DEFAULT_DIR=$new_files_dir|" spilot_common.sh
+  
+  # add ollama server host
+  ollama_server_ip_address=<ip>
+  echo "OLLAMA_SERVER_IP=${ollama_server_ip_address}" >> spilot_common.sh
+  ```
+
+  - set the permissions
+  ```shell
+  chmod +x s-pilot spilot_common.sh plugins/*.sh
+  ```
+
+  - Move the files to the dir
+  ```shell
+  cp s-pilot spilot_common.sh ${new_config_path}
+
+  cp plugins/*.sh ${new_config_path}/plugins
+  ```
+
+  - Add settings into the profile file
+  ```shell
+  # profile, e.g. .bash_profile
+  the_profile_file=$HOME/.bash_profile
+
+  # add the script/config path
+  echo "export PATH\=\$PATH\:${new_config_path}" >> $the_profile_file
+
+  # add source alias for alias option
+  echo "alias ss-pilot='source s-pilot'" >> $the_profile_file
+
+  # openai key if need
+  openai_api_key_value=<key>
+  echo "export OPENAI_KEY=${openai_api_key_value}" >> $the_profile_file
+
+  source $the_profile_file
+  ```
 
 ## Usage
 
