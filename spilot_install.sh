@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Check if the script is run as root
 if [[ $EUID -ne 0 ]]; then
@@ -62,6 +62,7 @@ PLUGINS_PATH="/usr/local/bin/plugins"
 SHELL_PILOT_SCRIPT_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/s-pilot"
 SHELL_PILOT_COMMON_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/spilot_common.sh"
 SHELL_PILOT_PLUGINS_PV_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/plugins/package_version.sh"
+SHELL_PILOT_PLUGINS_SA_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/plugins/system_alias.sh"
 
 # Function to download shell-pilot scripts with retries
 shell_pilot_download_script() {
@@ -85,19 +86,50 @@ shell_pilot_download_script() {
     return 1
 }
 
+# Function to add alias to a given profile
+function add_alias_to_profile() {
+    local profile_file="$1"
+    local alias_name="ss-pilot"
+    local alias_command="source s-pilot"
+
+    # Check if the alias already exists in the profile
+    if ! grep -q "^alias $alias_name=" "$profile_file"; then
+        echo "alias $alias_name='$alias_command'" >> "$profile_file"
+        echo "Alias '$alias_name' added to $profile_file"
+        source "$profile_file"
+    else
+        echo "Alias '$alias_name' already in $profile_file"
+    fi
+}
+
 # Download the s-pilot script
 shell_pilot_download_script "$SHELL_PILOT_SCRIPT_URL" "${INSTALL_PATH}/s-pilot" || exit 1
 
 # Download the configuration file spilot_common.sh
 shell_pilot_download_script "$SHELL_PILOT_COMMON_URL" "${INSTALL_PATH}/spilot_common.sh" || exit 1
 shell_pilot_download_script "$SHELL_PILOT_PLUGINS_PV_URL" "${PLUGINS_PATH}/package_version.sh" || exit 1
+shell_pilot_download_script "$SHELL_PILOT_PLUGINS_SA_URL" "${PLUGINS_PATH}/system_alias.sh" || exit 1
 
 # Optionally, set execute permissions
 chmod +x "${INSTALL_PATH}/s-pilot"
 chmod +x "${INSTALL_PATH}/spilot_common.sh"
 chmod +x "${PLUGINS_PATH}/package_version.sh"
+chmod +x "${PLUGINS_PATH}/system_alias.sh"
 
 echo "==> Shell Pilot installation completed."
+
+# Determine which shell profile is present and add the alias
+if [ -f ~/.zprofile ]; then
+  add_alias_to_profile ~/.zprofile
+elif [ -f ~/.zshrc ]; then
+  add_alias_to_profile ~/.zshrc
+elif [ -f ~/.bash_profile ]; then
+  add_alias_to_profile ~/.bash_profile
+elif [ -f ~/.profile ]; then
+  add_alias_to_profile ~/.profile
+else
+  echo "Could not find a known shell profile. Please manually add: alias ss-pilot='source s-pilot'"
+fi
 
 # Function to add environment variables to the user's shell profile
 add_to_profile() {

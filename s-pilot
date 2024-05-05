@@ -1,10 +1,11 @@
-#!/bin/bash
-#set -x
+#!/usr/bin/env bash
+# set -x
 SHELL_PILOT_CONFIG_PATH="/usr/local/bin/"
 SHELL_PILOT_PLUGINS_PATH="${SHELL_PILOT_CONFIG_PATH}/plugins"
 COMMON_CONFIG_FILE="${SHELL_PILOT_CONFIG_PATH}/spilot_common.sh"
 source $COMMON_CONFIG_FILE
 source "${SHELL_PILOT_PLUGINS_PATH}/package_version.sh"
+source "${SHELL_PILOT_PLUGINS_PATH}/system_alias.sh"
 
 # check if the OPENAI_KEY is set
 if [[ -z "$OPENAI_KEY" && "$USE_API" == "openai" ]]; then
@@ -96,6 +97,7 @@ Options:
 
  Plugins:
   pv, -pv, --package-version          Check the system package version, -f for fuzzy match
+  sa, -sa, --system-alias             system alias, -a/a to add, -r/r to remove, -l/l to list
 
 EOF
 }
@@ -552,11 +554,11 @@ while [[ "$#" -gt 0 ]]; do
 	e | -e | --edit)
 		# check vi is installed
 		if ! command -v vi &>/dev/null; then
-			echo -e "\033[33m==> Error: vi is not installed. Please install vi or set the EDITOR environment variable.\033[0m"
-			exit 1
+			echo -e "\033[33m==> Error: vi is not installed.\nPlease install vi or set the EDITOR environment variable.\033[0m"
+			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 1 || exit 1
 		fi
 		/usr/bin/vi $COMMON_CONFIG_FILE
-		exit 0
+		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 		;;
 	ip | -ip | --init-prompt)
 		validate_not_empty "$2"
@@ -595,7 +597,7 @@ while [[ "$#" -gt 0 ]]; do
 	    echo -e "\033[36mCheck the system package version\033[0m"
 		if [ $# -lt 2 ]; then
 			echo "Usage: $0 pv [-f] <pkg1> [pkg2] ..."
-			exit 1
+			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 		fi
 		fuzzy_option=$2
 		if [[ $fuzzy_option == "-f" ]]; then
@@ -608,8 +610,38 @@ while [[ "$#" -gt 0 ]]; do
 		for cmd in "$@"; do
 			generic_version_detect $cmd
 		done
-		exit 0
+		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 	   ;;
+	sa | -sa | --system-alias)
+		system_alias_action=$2
+		if [[ $system_alias_action == "-a" || $system_alias_action == "a" ]]; then 
+			if [ $# -lt 4 ]; then
+				echo "Usage: ss-pilot sa -a <alias1> <cmd1> [alias2] [cmd2] ..."
+				[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
+			fi
+			shift 2
+			shell_pilot_add_system_aliases "$@"
+			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
+		elif [[ $system_alias_action == "-r" || $system_alias_action == "r" ]];then 
+			if [ $# -lt 3 ]; then
+				echo "Usage: ss-pilot sa -r <alias1> [alias2] ..."
+				[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
+			fi
+			shift 2
+			shell_pilot_remove_system_aliases "$@"
+			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
+		elif [[ $system_alias_action == "-l" || $system_alias_action == "l" ]]; then
+			shell_pilot_list_system_aliases
+			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
+		else
+		    echo -e "Info: Invalid system alias action!\nPlease choose \033[1;36m-a/a\033[0m to add, \033[1;35m-r/r\033[0m to remove, or \033[1;34m-l/l\033[0m to list the system alias."
+			echo "Usage: ss-pilot sa <-a|a> <alias1> <cmd1> [alias2] [cmd2] ..."
+			echo "Usage: ss-pilot sa <-r|r> <alias1> [alias2] ..."
+			echo "Usage: ss-pilot sa <-l|l>"
+			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
+		fi
+		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
+		;;
 	t | -t | --temperature)
 		validate_not_empty "$2"
 		validate_temperature "$2"
@@ -627,11 +659,11 @@ while [[ "$#" -gt 0 ]]; do
 		grep SYSTEM_PROMPT -A 1 -B 2 $COMMON_CONFIG_FILE
 		echo
 		tail -10 $COMMON_CONFIG_FILE
-		exit 0
+		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 		;;
 	lm | -lm | --list-models)
 		list_models
-		exit 0
+		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 		;;
 	lr | -lr | --list-chat-record)
 	   CHAT_RECORD_FILE_NAME=$2
@@ -646,7 +678,7 @@ while [[ "$#" -gt 0 ]]; do
 
 			else
 				echo -e "\033[36m==> Error: The chat record file does not exist or the name is not provided or empty.\033[0m"
-				exit 1
+				[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 1 || exit 1
 			fi 
 	   else
 	   	   	echo -e "\033[36m==> Here are the chat record files[<name>-chat_record.spilot]:\033[0m"
@@ -658,16 +690,16 @@ while [[ "$#" -gt 0 ]]; do
        CHAT_RECORD_FILE_NAME=$2
        if [ -z "$CHAT_RECORD_FILE_NAME" ]; then
            echo -e "\033[31mError: You must provide a file name to delete.\033[0m"
-           exit 1
+           [[ "${BASH_SOURCE[0]}" != "$0" ]] && return 1 || exit 1
        fi
        CHAT_RECORD_FILE="${SPILOT_FILES_DEFAULT_DIR}/${CHAT_RECORD_FILE_NAME}-chat_record.spilot"
        if [[ -f "${CHAT_RECORD_FILE}" ]]; then
            rm  -i "${CHAT_RECORD_FILE}"
            echo -e "\033[32mFile ${CHAT_RECORD_FILE} has been deleted successfully.\033[0m"
-		   exit 0
+		   [[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
        else
            echo -e "\033[31mError: ${CHAT_RECORD_FILE} file does not exist.\033[0m"
-           exit 1
+           [[ "${BASH_SOURCE[0]}" != "$0" ]] && return 1 || exit 1
        fi
        ;;
 	m | --model)
@@ -692,7 +724,7 @@ while [[ "$#" -gt 0 ]]; do
 		;;
 	cc | -cc | --code-chat)
 		code_chat_function
-		exit 0
+		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 		;;
 	cmp | -cmp | --change-model-provider)
 		validate_not_empty "$2"
@@ -706,20 +738,21 @@ while [[ "$#" -gt 0 ]]; do
 		else
 			# print error message and exit if the model provider is invalid
 			echo -e "Error: Invalid model provider. Please choose \033[1;36mopenai\033[0m or \033[1;35mollama\033[0m."
-			exit 1
+			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 1 || exit 1
 		fi
 		;;
 	v | -v | --version)
 		echo -ne "\033[36m[Shell Pilot Version]: ${SHELL_PILOT_VERSION}\033[0m\n"
-		exit 0
+		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 		;;
 	h | -h | --help)
 		usage
-		exit 0
+		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 		;;
 	*)
 		echo "Unknown parameter: $1"
-		exit 1
+		# fix the source issue
+		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 		;;
 	esac
 done

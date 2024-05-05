@@ -2,23 +2,34 @@
   <img src="https://github.com/reid41/shell-pilot/assets/25558653/7d99c212-4b5c-456d-907d-20df16112cd5" alt="shell-pilot">
 </p>
 
-An enhanced  version of the [chatGPT-shell-cli](https://github.com/0xacx/chatGPT-shell-cli) library , this fork not only supports Ollama and integrates with local LLMs but also introduces significant improvements and additional functionalities. These enhancements encompass a range of optimizations and feature expansions that elevate the utility and efficiency of the original tool.
-
-A simple, lightweight shell script to use `OpenAI(chatGPT and DALL-E)` or `Ollama` from the terminal without installing python or node.js. The script uses the official ChatGPT model `gpt-3.5-turbo` with the OpenAI API endpoint `/chat/completions`. You can also use the new `gpt-4` model, if you have access.  
-Also, support with local LLm from `ollma`.
+A simple, lightweight shell script to interact with `OpenAI` or `Ollama` from the terminal, and enhancing intelligent system management without any dependencies(pure shell).
 </div>
 
 ## Features
 
 - Based on [Ollama](https://ollama.com/) to setup a local LLM repository(`support llama3`), work with [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
-- Use the official chatgpt model with the ✨ [official ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis) ✨ from the terminal
+- Use the official chatgpt model with the [official ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis) from the terminal
 - View your history and session persistence
 - Chat context, GPT remembers previous chat questions and answers
-- Pass the input prompt with, as a script parameter or normal chat mode(bash version: 4.0+)
+- Pass the input prompt with pipe/redirector(`|`, `<`), as a script parameter or normal chat mode(bash version: 4.0+)
 - List all available models 
 - Set OpenAI request parameters
 - Generate a command and run it in terminal, and can use `code chat mode` easy to interact 
-- Easy to set the config
+- Easy to set the config in command parameter or edit config with vi mode(option e)
+- Enhanced system interaction and efficiency with features aimed at basic system management
+- `Modular plugin design` allows for easy expansion with each plugin introducing a new functionality, making the tool more powerful and adaptable to user needs.
+  - Easy to check system package verison
+  - Easy to add/list/remove alias from command line
+
+
+#### Code chat mode scenario
+
+![code-chat](https://github.com/reid41/shell-pilot/assets/25558653/58eee738-3f54-49c5-a1bb-1ebb87b2f1e5)
+
+
+#### Vim/vi scenario
+
+![vi-vim-new](https://github.com/reid41/shell-pilot/assets/25558653/f3b97c20-2861-4392-8cc8-c85ccccf2abb)
 
 ## Disclaimer
 
@@ -150,12 +161,7 @@ This script relies on curl for the requests to the api and jq to parse the json 
   2. **Control Structures**: Learn about loops (for, while), if statements, and functions...
   ```
 
-#### Use in vi/vim
-![vi-vim-new](https://github.com/reid41/shell-pilot/assets/25558653/f3b97c20-2861-4392-8cc8-c85ccccf2abb)
-
 #### Script Parameters
-  - Code chat mode
-  ![code-chat](https://github.com/reid41/shell-pilot/assets/25558653/58eee738-3f54-49c5-a1bb-1ebb87b2f1e5)
 
   - Help with `h`, `-h`, `--help`:
 
@@ -458,5 +464,42 @@ This script relies on curl for the requests to the api and jq to parse the json 
   Check the system package version
   ✔ libusb version 1.0.27
   ✔ usb.ids version 2024.03.18
-✔ usbredir version 0.14.0
+  ✔ usbredir version 0.14.0
   ```
+  - sa: manage the system alias
+  ```shell
+  # use `ss-pilot` to execute(not `s-pilot`), it will set it after installation
+
+  # ss-pilot sa a lx "ls -l /tmp/" lxx "ls -ld /etc" cdetc "cd /etc"
+  ==> Alias 'lx' added to /root/spilot_files_dir/shell_pilot_system_aliases and is active.
+  ==> Alias 'lxx' added to /root/spilot_files_dir/shell_pilot_system_aliases and is active.
+  ==> Alias 'cdetc' added to /root/spilot_files_dir/shell_pilot_system_aliases and is active.
+
+  # ss-pilot sa l
+  ==> Aliase List:
+  alias lx='ls -l /tmp/'
+  alias lxx='ls -ld /etc'
+  alias cdetc='cd /etc'
+
+  # lx
+  total 0
+  # cdetc
+  # pwd
+  /etc
+
+  # ss-pilot sa r lx lxx cdetc
+  ==> Alias 'lx' removed from /root/spilot_files_dir/shell_pilot_system_aliases
+  ==> Alias 'lxx' removed from /root/spilot_files_dir/shell_pilot_system_aliases
+  ==> Alias 'cdetc' removed from /root/spilot_files_dir/shell_pilot_system_aliases
+
+  # lx
+  -bash: lx: command not found
+  ```
+
+### Acknowledgements
+
+The following projects are worth remarking.
+They were studied during development of this script and used as referencial code sources.
+
+1. [0xacx's chatGPT-shell-cli](https://github.com/0xacx/chatGPT-shell-cli)
+2. [Ollama](https://github.com/ollama/ollama/)
