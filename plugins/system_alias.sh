@@ -60,7 +60,7 @@ function shell_pilot_list_system_aliases() {
     [[ ! -f $shell_pilot_alias_file ]] && echo -e "\033[0;31m==> Not create alias in $shell_pilot_alias_file\033[0m" && return
 
     if [[ -s $shell_pilot_alias_file ]]; then
-        echo -e "\033[0;36m==> Aliase List:\033[0m"
+        echo -e "\033[0;36m==> Alias List:\033[0m"
        cat $shell_pilot_alias_file
     else
        echo -e "\033[0;36m==> No aliases found in $shell_pilot_alias_file\033[0m"
