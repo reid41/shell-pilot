@@ -816,11 +816,8 @@ while $running; do
 			read -e prompt
 		fi
 		if [[ ! $prompt =~ ^(e|q)$ ]]; then
-			# echo "start again"
-			# echo -ne $PROCESSING_LABEL
 			dynamic_spinner_wait &
 			dynamic_spinner_pid=$!
-			# echo "the pid: $dynamic_spinner_pid"
 		fi
 	else
 		# set vars for pipe mode
