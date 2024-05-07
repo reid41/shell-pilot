@@ -8,7 +8,7 @@ OVERWRITE_PROCESSING_LINE="             \033[0K\r"
 COLUMNS=$(tput cols)
 
 # version: major.minor.patch
-SHELL_PILOT_VERSION=1.7.6
+SHELL_PILOT_VERSION=1.8.6
 
 # store directory
 SPILOT_FILES_DEFAULT_DIR=~/spilot_files_dir
