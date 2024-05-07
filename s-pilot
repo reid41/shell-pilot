@@ -6,6 +6,7 @@ COMMON_CONFIG_FILE="${SHELL_PILOT_CONFIG_PATH}/spilot_common.sh"
 source $COMMON_CONFIG_FILE
 source "${SHELL_PILOT_PLUGINS_PATH}/package_version.sh"
 source "${SHELL_PILOT_PLUGINS_PATH}/system_alias.sh"
+SPINNER_SIGNAL_FILE=${SPILOT_FILES_DEFAULT_DIR}/spilot_spinner_signal
 
 # check if the OPENAI_KEY is set
 if [[ -z "$OPENAI_KEY" && "$USE_API" == "openai" ]]; then
@@ -163,7 +164,7 @@ list_models() {
         if (( age < max_age )); then
             # Cache is valid, read from the cache
             show_llm_models_output
-            exit 0
+            return 0
         fi
     fi
 
@@ -496,7 +497,7 @@ code_chat_function(){
 				break
 			fi
 
-			# clear the previous lineq
+			# clear the previous line
 			echo -ne "\033[1A\033[K"
 
 			system_info=$(get_system_info)
@@ -527,6 +528,23 @@ code_chat_function(){
 				fi
 			fi
 		done
+}
+
+# spin output
+dynamic_spinner_wait() {
+    [[ ! -f ${SPINNER_SIGNAL_FILE} ]] && touch ${SPINNER_SIGNAL_FILE}
+    echo "0" > ${SPINNER_SIGNAL_FILE}
+    local -a marks=('/' '-' '\' '|')
+    local delay=0.2
+
+    while [[ $(cat ${SPINNER_SIGNAL_FILE}) == "0" ]]; do
+        for mark in "${marks[@]}"; do
+            echo -ne "\r\033[92m$mark Processing...\033[0m"
+            sleep $delay
+        done
+    done
+
+    echo -ne "\r\033[0K"  
 }
 
 # check if the chat record flag is enabled
@@ -798,7 +816,11 @@ while $running; do
 			read -e prompt
 		fi
 		if [[ ! $prompt =~ ^(e|q)$ ]]; then
-			echo -ne $PROCESSING_LABEL
+			# echo "start again"
+			# echo -ne $PROCESSING_LABEL
+			dynamic_spinner_wait &
+			dynamic_spinner_pid=$!
+			# echo "the pid: $dynamic_spinner_pid"
 		fi
 	else
 		# set vars for pipe mode
@@ -816,9 +838,18 @@ while $running; do
 			echo "$chat_message" > "${CHAT_RECORD_FILE}"
 		fi
 	elif [[ "$prompt" == "history" ]]; then
+		# echo "1" > ${SPINNER_SIGNAL_FILE}
+		# stop the spinner
+		cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1
+		echo "1" > ${SPINNER_SIGNAL_FILE}
+		wait $dynamic_spinner_pid
 		echo -ne "$OVERWRITE_PROCESSING_LINE"
 		echo -e "\n$(cat $SIPLOT_HISTORY_FILE)"
 	elif [[ "$prompt" == "models" ]]; then
+		# stop the spinner
+		cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1
+		echo "1" > ${SPINNER_SIGNAL_FILE}
+		wait $dynamic_spinner_pid
 		list_models
 	elif [[ "$prompt" =~ ^model: ]]; then
 		if [[ "$USE_API" == "openai" ]]; then
@@ -827,6 +858,10 @@ while $running; do
 				-H "Authorization: Bearer $OPENAI_KEY")
 			handle_error "$models_response"
 			model_data=$(echo $models_response | jq -r -C '.data[] | select(.id=="'"${prompt#*model:}"'")')
+			# stop the spinner
+			cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1
+			echo "1" > ${SPINNER_SIGNAL_FILE}
+			wait $dynamic_spinner_pid
 			echo -e "$OVERWRITE_PROCESSING_LINE"
 			echo -e "${SHELLPILOT_CYAN_LABEL}Complete details for model: ${prompt#*model:}\n ${model_data}"
 		elif [[ "$USE_API" == "ollama" ]]; then
@@ -835,6 +870,10 @@ while $running; do
 			escaped_prompt=$(escape "$prompt")
 			escaped_prompt=${escaped_prompt#model:}
 			escaped_prompt=$(echo "$escaped_prompt" | sed 's/\\n//g' | sed 's/\.//g')
+			# stop the spinner
+			cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1
+			echo "1" > ${SPINNER_SIGNAL_FILE}
+			wait $dynamic_spinner_pid
 			echo -e "$OVERWRITE_PROCESSING_LINE"
 			curl -s http://${OLLAMA_SERVER_IP}:11434/api/show -d '{
 			"name": "'"$escaped_prompt"'"
@@ -865,6 +904,10 @@ while $running; do
 		request_prompt="System info: ${system_info}\n${COMMAND_GENERATION_PROMPT}\nCommand request: ${escaped_prompt}"
 		build_user_chat_message "$request_prompt"
 		response=$(request_to_chat "$chat_message")
+		# stop the spinner
+		cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1
+		echo "1" > ${SPINNER_SIGNAL_FILE}
+		wait $dynamic_spinner_pid
 		handle_error "$response"
 		if [[ "$USE_API" == "ollama" ]]; then
 			response_data=$(echo $response | jq -r '.message.content')
@@ -926,6 +969,10 @@ while $running; do
 		request_prompt=$(escape "$prompt")
 		build_user_chat_message "$request_prompt"
 		response=$(request_to_chat "$chat_message")
+		# stop the spinner
+		cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1
+		echo "1" > ${SPINNER_SIGNAL_FILE}
+		wait $dynamic_spinner_pid
 		handle_error "$response"
 		if [[ "$USE_API" == "ollama" ]]; then
 			response_data=$(echo $response | jq -r '.message.content')
@@ -959,6 +1006,10 @@ while $running; do
 		fi
 
 		response=$(request_to_completions "$request_prompt")
+		# stop the spinner
+		cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1
+		echo "1" > ${SPINNER_SIGNAL_FILE}
+		wait $dynamic_spinner_pid
 		handle_error "$response"
 		response_data=$(echo "$response" | jq -r '.choices[].text')
 
