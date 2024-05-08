@@ -15,6 +15,13 @@ if [[ -z "$OPENAI_KEY" && "$USE_API" == "openai" ]]; then
 	exit 1
 fi
 
+# check if the MISTRAL_API_KEY is set
+if [[ -z "$MISTRAL_API_KEY" && "$USE_API" == "mistralai" ]]; then
+	echo "You need to set your MISTRAL_API_KEY to use this script!"
+	echo "You can set it temporarily by running this on your terminal: export MISTRAL_API_KEY=YOUR_KEY_HERE"
+	exit 1
+fi
+
 # check if the OLLAMA host is set
 if [[ "$USE_API" == "ollama" ]]; then
 	if [[ -z "$OLLAMA_SERVER_IP" ]]; then
@@ -138,15 +145,17 @@ show_llm_models_output(){
 		done
 	elif [[ "$USE_API" == "openai" ]]; then
 		cat "$LIST_MODELS_CACHE_FILE"
+	elif [[ "$USE_API" == "mistralai" ]]; then
+		cat "$LIST_MODELS_CACHE_FILE"
 	fi
 }
 
-# list the models main function
+# list the models
 list_models() {
     local cache_file="$LIST_MODELS_CACHE_FILE"
     local max_age=${CACHE_MAX_AGE}
 
-	[[ ! -d $SPILOT_FILES_DEFAULT_DIR ]] && mkdir -p $SPILOT_FILES_DEFAULT_DIR
+    [[ ! -d $SPILOT_FILES_DEFAULT_DIR ]] && mkdir -p $SPILOT_FILES_DEFAULT_DIR
 
     # Check if the cache file exists and is not empty
     if [[ -f "$cache_file" ]] && [[ -s "$cache_file" ]]; then
@@ -162,17 +171,41 @@ list_models() {
 
         # Check if the cache is not older than the max age
         if (( age < max_age )); then
-            # Cache is valid, read from the cache
-            show_llm_models_output
-            return 0
+            # Additional check for API content
+			# Fix the issue of changing the API with "e" option
+            local content_valid=false
+            case $USE_API in
+                ollama)
+                    grep -qi "llama" "$cache_file" && content_valid=true
+                    ;;
+                openai)
+                    grep -qi "gpt" "$cache_file" && content_valid=true
+                    ;;
+                mistralai)
+                    grep -qi "mistral" "$cache_file" && content_valid=true
+                    ;;
+            esac
+
+            if [[ "$content_valid" == true ]]; then
+                show_llm_models_output
+                return 0
+            else
+                # Cache is expired, invalid, or does not exist, fetch the models
+				fetch_and_cache_models "$cache_file"
+				# Read from the new cache
+				show_llm_models_output
+				return 0
+            fi
         fi
     fi
 
-    # Cache is expired or does not exist, fetch the models
+    # Cache is expired, invalid, or does not exist, fetch the models
     fetch_and_cache_models "$cache_file"
     # Read from the new cache
     show_llm_models_output
 }
+
+
 
 # fetch and cache the models
 fetch_and_cache_models() {
@@ -186,6 +219,12 @@ fetch_and_cache_models() {
             -H "Authorization: Bearer $OPENAI_KEY")
         handle_error "$models_response"
         echo $models_response | jq -r -C '.data[] | {id, owned_by, created}' > "$cache_file"
+	elif [[ "$USE_API" == "mistralai" ]]; then
+		local models_response=$(curl -s "https://api.mistral.ai/v1/models" \
+		--header 'Content-Type: application/json' \
+		--header 'Accept: application/json' \
+		--header "Authorization: Bearer $MISTRAL_API_KEY")
+	 	echo $models_response | jq -r -C '.data[] | {id, owned_by, created}'  > "$cache_file"
     else
         echo "Error: No API specified."
         exit 1
@@ -245,6 +284,19 @@ request_to_completions() {
 			"max_tokens": '$MAX_TOKENS',
 			"temperature": '$TEMPERATURE'
 			}'
+	elif [[ "$USE_API" == "mistralai" ]]
+	then 
+		curl https://api.mistral.ai/v1/chat/completions \
+		-sS \
+		-H 'Content-Type: application/json' \
+		-H 'Accept: application/json' \
+		-H "Authorization: Bearer $MISTRAL_API_KEY" \
+		-d '{
+			"model": "'"$MODEL_MISTRALAI"'",
+			"prompt": "'"$prompt"'",
+			"max_tokens": '$MAX_TOKENS',
+			"temperature": '$TEMPERATURE'
+			}'
 	else
 		echo "Error: No API specified".
 		exit 1
@@ -286,6 +338,22 @@ request_to_chat() {
 				"max_tokens": '$MAX_TOKENS',
 				"temperature": '$TEMPERATURE'
 				}'
+	elif [[ "$USE_API" == "mistralai" ]]
+	then 
+		curl https://api.mistral.ai/v1/chat/completions \
+		-sS \
+		-H 'Content-Type: application/json' \
+		-H 'Accept: application/json' \
+		-H "Authorization: Bearer $MISTRAL_API_KEY" \
+		-d '{
+			"model": "'"$MODEL_MISTRALAI"'",
+			"messages": [
+				{"role": "system", "content": "'"$escaped_system_prompt"'"},
+				'"$message"'
+				],
+			"max_tokens": '$MAX_TOKENS',
+			"temperature": '$TEMPERATURE'
+		}'
 	else
 		echo "Error: No API specified".
 		exit 1
@@ -509,6 +577,8 @@ code_chat_function(){
 				response_data=$(echo $response | jq -r '.message.content')
 			elif [[ "$USE_API" == "openai" ]]; then
 				response_data=$(echo $response | jq -r '.choices[].message.content')
+			elif [[ "$USE_API" == "mistralai" ]]; then
+				response_data=$(echo $response | jq -r '.choices[].message.content')
 			fi
 			add_assistant_response_to_chat_message "$(escape "$response_data")"
 			# execute_cmd=$(echo "$response_data" | sed 's/[`$]//g')
@@ -676,7 +746,7 @@ while [[ "$#" -gt 0 ]]; do
 		echo
 		grep SYSTEM_PROMPT -A 1 -B 2 $COMMON_CONFIG_FILE
 		echo
-		tail -10 $COMMON_CONFIG_FILE
+		tail -11 $COMMON_CONFIG_FILE
 		[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 0 || exit 0
 		;;
 	lm | -lm | --list-models)
@@ -725,6 +795,9 @@ while [[ "$#" -gt 0 ]]; do
 		if [[ "$USE_API" == "openai" ]]; then
 			update_config "$2" "MODEL_OPENAI"
 			check_the_setting "openai model" "MODEL_OPENAI"
+		elif [[ "$USE_API" == "mistralai" ]]; then
+			update_config "$2" "MODEL_MISTRALAI"
+			check_the_setting "mistralai model" "MODEL_MISTRALAI"
 		elif [[ "$USE_API" == "ollama" ]]; then
 			update_config "$2" "MODEL_OLLAMA"
 			check_the_setting "ollama model" "MODEL_OLLAMA"
@@ -747,7 +820,7 @@ while [[ "$#" -gt 0 ]]; do
 	cmp | -cmp | --change-model-provider)
 		validate_not_empty "$2"
 		# check if the model provider is valid
-		if [[ "$2" == "openai" || "$2" == "ollama" ]]; then
+		if [[ "$2" == "openai" || "$2" == "ollama" || "$2" == "mistralai" ]]; then
 			# update the model provider
 			update_config "$2" "USE_API"
 			# clean the cache
@@ -755,7 +828,7 @@ while [[ "$#" -gt 0 ]]; do
 			check_the_setting "model provider" "USE_API"
 		else
 			# print error message and exit if the model provider is invalid
-			echo -e "Error: Invalid model provider. Please choose \033[1;36mopenai\033[0m or \033[1;35mollama\033[0m."
+			echo -e "Error: Invalid model provider. Please choose \033[1;36mopenai\033[0m or \033[1;37mmistralai\033[0m or \033[1;35mollama\033[0m."
 			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 1 || exit 1
 		fi
 		;;
@@ -861,6 +934,19 @@ while $running; do
 			wait $dynamic_spinner_pid
 			echo -e "$OVERWRITE_PROCESSING_LINE"
 			echo -e "${SHELLPILOT_CYAN_LABEL}Complete details for model: ${prompt#*model:}\n ${model_data}"
+		elif [[ "$USE_API" == "mistralai" ]]; then
+			models_response=$(curl https://api.mistral.ai/v1/models\
+				-sS \
+				-H 'Content-Type: application/json' \
+				-H 'Accept: application/json' \
+				-H "Authorization: Bearer $MISTRAL_API_KEY")
+			model_data=$(echo $models_response | jq -r -C '.data[] | select(.id=="'"${prompt#*model:}"'")')
+			# stop the spinner
+			cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1
+			echo "1" > ${SPINNER_SIGNAL_FILE}
+			wait $dynamic_spinner_pid
+			echo -e "$OVERWRITE_PROCESSING_LINE"
+			echo -e "${SHELLPILOT_CYAN_LABEL}Complete details for model: ${prompt#*model:}\n ${model_data}"
 		elif [[ "$USE_API" == "ollama" ]]; then
 			echo -e "$OVERWRITE_PROCESSING_LINE"
 			# get the model name
@@ -909,6 +995,8 @@ while $running; do
 		if [[ "$USE_API" == "ollama" ]]; then
 			response_data=$(echo $response | jq -r '.message.content')
 		elif [[ "$USE_API" == "openai" ]]; then
+			response_data=$(echo $response | jq -r '.choices[].message.content')
+		elif [[ "$USE_API" == "mistralai" ]]; then
 			response_data=$(echo $response | jq -r '.choices[].message.content')
 		fi
 
@@ -974,6 +1062,8 @@ while $running; do
 		if [[ "$USE_API" == "ollama" ]]; then
 			response_data=$(echo $response | jq -r '.message.content')
 		elif [[ "$USE_API" == "openai" ]]; then
+			response_data=$(echo $response | jq -r '.choices[].message.content')
+		elif [[ "$USE_API" == "mistralai" ]]; then
 			response_data=$(echo $response | jq -r '.choices[].message.content')
 		fi
 

@@ -1,4 +1,3 @@
-
 # This is config file for spilot
 GLOBIGNORE="*"
 # output formatting
@@ -8,7 +7,7 @@ OVERWRITE_PROCESSING_LINE="             \033[0K\r"
 COLUMNS=$(tput cols)
 
 # version: major.minor.patch
-SHELL_PILOT_VERSION=1.8.6
+SHELL_PILOT_VERSION=1.9.7
 
 # store directory
 SPILOT_FILES_DEFAULT_DIR=~/spilot_files_dir
@@ -21,16 +20,22 @@ LIST_MODELS_CACHE_FILE="$SPILOT_FILES_DEFAULT_DIR/models_list.cache"
 USE_API=ollama
 CURRENT_DATE=$(date +%m/%d/%Y)
 
-# Set default values for OpenAI settings
+# Set default values for Ollama settings
 if [ "$USE_API" == "ollama" ]; then
     MODEL_NAME="Ollama"
     ORGANIZATION="Ollama"
 fi
 
-# Adjust settings for Ollama API
+# Adjust settings for OpenAI settings
 if [ "$USE_API" == "openai" ]; then
     MODEL_NAME="ChatGPT"
     ORGANIZATION="OpenAI"
+fi
+
+# Adjust settings for Mistral AI API
+if [ "$USE_API" == "mistralai" ]; then
+    MODEL_NAME="Mistral AI"
+    ORGANIZATION="Mistral AI"
 fi
 
 # Define prompts using the adjusted settings
@@ -42,7 +47,8 @@ COMMAND_GENERATION_PROMPT="You are a Command Line Interface expert and your task
 TEMPERATURE=0.9
 MAX_TOKENS=4096
 MODEL_OPENAI=gpt-3.5-turbo
-MODEL_OLLAMA=llama2
+MODEL_OLLAMA=llama3:70b
+MODEL_MISTRALAI=mistral-small
 CONTEXT=false
 MULTI_LINE_PROMPT=false
 ENABLE_DANGER_FLAG=false
