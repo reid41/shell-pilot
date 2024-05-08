@@ -2,13 +2,14 @@
   <img src="https://github.com/reid41/shell-pilot/assets/25558653/7d99c212-4b5c-456d-907d-20df16112cd5" alt="shell-pilot">
 </p>
 
-A simple, lightweight shell script to interact with `OpenAI` or `Ollama` from the terminal, and enhancing intelligent system management without any dependencies(pure shell).
+A simple, lightweight shell script to interact with `OpenAI` or `Ollama` or `Mistral AI` from the terminal, and enhancing intelligent system management without any dependencies(pure shell).
 </div>
 
 ## Features
 
 - Based on [Ollama](https://ollama.com/) to setup a local LLM repository(`support llama3`), work with [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
 - Use the official chatgpt model with the [official ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis) from the terminal
+- Use the official Mistral AI model with the [Mistral AI API](https://docs.mistral.ai/)
 - View your history and session persistence
 - Chat context, GPT remembers previous chat questions and answers
 - Pass the input prompt with pipe/redirector(`|`, `<`), as a script parameter or normal chat mode(bash version: 4.0+)
@@ -149,9 +150,14 @@ This script relies on curl for the requests to the api and jq to parse the json 
   # add source alias for alias option
   echo "alias ss-pilot='source s-pilot'" >> $the_profile_file
 
-  # openai key if need
+  # openai/mistral key if need
+  # openai
   openai_api_key_value=<key>
   echo "export OPENAI_KEY=${openai_api_key_value}" >> $the_profile_file
+
+  # mistral ai
+  mistralai_api_key_value=<key>
+  echo "export MISTRAL_API_KEY=${mistralai_api_key_value}" >> $the_profile_file
 
   source $the_profile_file
   ```
@@ -338,7 +344,7 @@ This script relies on curl for the requests to the api and jq to parse the json 
   }
   ```
 
-  - `model:` To view all the information on a specific model, start a prompt with `model:` and the model `id`,e.g.
+  - `model:` To view all the information on a specific model, start a prompt with `model:` and the model `id`, please `do not use space between model: and id`,e.g.
   ``` shell
   $ s-pilot
   Welcome to Shell Pilot!!
