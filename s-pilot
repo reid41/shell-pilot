@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # set -x
-SHELL_PILOT_CONFIG_PATH="/usr/local/bin/"
+SHELL_PILOT_CONFIG_PATH="/usr/local/bin"
 SHELL_PILOT_PLUGINS_PATH="${SHELL_PILOT_CONFIG_PATH}/plugins"
 COMMON_CONFIG_FILE="${SHELL_PILOT_CONFIG_PATH}/spilot_common.sh"
 source $COMMON_CONFIG_FILE
+source "${SHELL_PILOT_CONFIG_PATH}/spilot_llm_rq_apis.sh"
 source "${SHELL_PILOT_PLUGINS_PATH}/package_version.sh"
 source "${SHELL_PILOT_PLUGINS_PATH}/system_alias.sh"
 SPINNER_SIGNAL_FILE=${SPILOT_FILES_DEFAULT_DIR}/spilot_spinner_signal
@@ -37,7 +38,7 @@ fi
 usage() {
 	cat <<EOF
 A simple, lightweight shell script to use OpenAI's Language Models and DALL-E 
-or Ollama models from the terminal without installing Python or Node.js.
+or Ollama models or MistralAI models from the terminal without installing Python or Node.js.
 Open Source and written in 100% Shell (Bash).
 
 https://github.com/reid41/shell-pilot.git
@@ -49,6 +50,9 @@ It will upgrade to "gpt-4" when the API is accessible to anyone.
 For Ollama:
 By default the script uses the "llama2" model.
 
+For MistralAI:
+By default the script uses the "mistral-small" model.
+
 It will enter "chat" mode without any options, here are some commands you can use:
 
 Commands:
@@ -58,7 +62,7 @@ Commands:
   cmd: - To get a command with the specified functionality and run it, just type "cmd:" and explain what you want to achieve. The script will always ask you if you want to execute the command.
 
 Options:
-  cmp, -cmp, --change-model-provider   Change the model provider between OpenAI and Ollama
+  cmp, -cmp, --change-model-provider   Change the model provider between openai, ollama, mistralai
 
   e, -e, --edit                        Edit the configuration file directly
 
@@ -212,18 +216,14 @@ fetch_and_cache_models() {
     local cache_file=$1
 	echo -ne "\n\033[36mFetching it from the API and store it for cache...\n\033[0m"
     if [[ "$USE_API" == "ollama" ]]; then
-        curl -s http://${OLLAMA_SERVER_IP}:11434/api/tags | jq -c '.models[]' > "$cache_file"
+		models_response=$(fetch_model_from_ollama)
+        echo $models_response | jq -c '.models[]' > "$cache_file"
     elif [[ "$USE_API" == "openai" ]]; then
-        local models_response=$(curl https://api.openai.com/v1/models \
-            -sS \
-            -H "Authorization: Bearer $OPENAI_KEY")
+		models_response=$(fetch_model_from_openai)
         handle_error "$models_response"
         echo $models_response | jq -r -C '.data[] | {id, owned_by, created}' > "$cache_file"
 	elif [[ "$USE_API" == "mistralai" ]]; then
-		local models_response=$(curl -s "https://api.mistral.ai/v1/models" \
-		--header 'Content-Type: application/json' \
-		--header 'Accept: application/json' \
-		--header "Authorization: Bearer $MISTRAL_API_KEY")
+		models_response=$(fetch_model_from_mistralai)
 	 	echo $models_response | jq -r -C '.data[] | {id, owned_by, created}'  > "$cache_file"
     else
         echo "Error: No API specified."
@@ -255,110 +255,6 @@ format_and_display() {
           '{name: $name, size: $size, format: $format, parameter_size: $parameter_size, quantization_level: $quantization_level}'
 }
 
-
-# request to OpenAI API/ollama completions endpoint function
-# $1 should be the request prompt
-request_to_completions() {
-	local prompt="$1"
-
-	if [[ "$USE_API" == "ollama" ]]
-	then
-		curl http://${OLLAMA_SERVER_IP}:11434/api/generate \
-		-sS \
-		-d '{
-			"model": "'"$MODEL_OLLAMA"'",
-			"prompt": "'"$prompt"'",
-			"max_tokens": '$MAX_TOKENS',
-			"temperature": '$TEMPERATURE',
-			"stream": false
-			}'
-	elif [[ "$USE_API" == "openai" ]]
-	then
-		curl https://api.openai.com/v1/completions \
-		-sS \
-		-H 'Content-Type: application/json' \
-		-H "Authorization: Bearer $OPENAI_KEY" \
-		-d '{
-			"model": "'"$MODEL_OPENAI"'",
-			"prompt": "'"$prompt"'",
-			"max_tokens": '$MAX_TOKENS',
-			"temperature": '$TEMPERATURE'
-			}'
-	elif [[ "$USE_API" == "mistralai" ]]
-	then 
-		curl https://api.mistral.ai/v1/chat/completions \
-		-sS \
-		-H 'Content-Type: application/json' \
-		-H 'Accept: application/json' \
-		-H "Authorization: Bearer $MISTRAL_API_KEY" \
-		-d '{
-			"model": "'"$MODEL_MISTRALAI"'",
-			"prompt": "'"$prompt"'",
-			"max_tokens": '$MAX_TOKENS',
-			"temperature": '$TEMPERATURE'
-			}'
-	else
-		echo "Error: No API specified".
-		exit 1
-	fi
-}
-
-# request to OpenAPI API/ollama chat completion endpoint function
-# $1 should be the message(s) formatted with role and content
-request_to_chat() {
-	local message="$1"
-	escaped_system_prompt=$(escape "$SYSTEM_PROMPT")
-	
-	if [[ "$USE_API" == "ollama" ]]
-	then
-		curl http://${OLLAMA_SERVER_IP}:11434/api/chat \
-		-sS \
-		-d '{
-            "model": "'"$MODEL_OLLAMA"'",
-            "messages": [
-                {"role": "system", "content": "'"$escaped_system_prompt"'"},
-                '"$message"'
-                ],
-            "max_tokens": '$MAX_TOKENS',
-            "temperature": '$TEMPERATURE',
-			"stream": false
-            }'
-	elif [[ "$USE_API" == "openai" ]]
-	then
-		curl https://api.openai.com/v1/chat/completions \
-			-sS \
-			-H 'Content-Type: application/json' \
-			-H "Authorization: Bearer $OPENAI_KEY" \
-			-d '{
-				"model": "'"$MODEL_OPENAI"'",
-				"messages": [
-					{"role": "system", "content": "'"$escaped_system_prompt"'"},
-					'"$message"'
-					],
-				"max_tokens": '$MAX_TOKENS',
-				"temperature": '$TEMPERATURE'
-				}'
-	elif [[ "$USE_API" == "mistralai" ]]
-	then 
-		curl https://api.mistral.ai/v1/chat/completions \
-		-sS \
-		-H 'Content-Type: application/json' \
-		-H 'Accept: application/json' \
-		-H "Authorization: Bearer $MISTRAL_API_KEY" \
-		-d '{
-			"model": "'"$MODEL_MISTRALAI"'",
-			"messages": [
-				{"role": "system", "content": "'"$escaped_system_prompt"'"},
-				'"$message"'
-				],
-			"max_tokens": '$MAX_TOKENS',
-			"temperature": '$TEMPERATURE'
-		}'
-	else
-		echo "Error: No API specified".
-		exit 1
-	fi
-}
 
 # build chat context before each request for /completions (all models except
 # gpt turbo and gpt 4)
@@ -923,9 +819,7 @@ while $running; do
 		list_models
 	elif [[ "$prompt" =~ ^model: ]]; then
 		if [[ "$USE_API" == "openai" ]]; then
-			models_response=$(curl https://api.openai.com/v1/models \
-				-sS \
-				-H "Authorization: Bearer $OPENAI_KEY")
+			models_response=$(fetch_model_from_openai)
 			handle_error "$models_response"
 			model_data=$(echo $models_response | jq -r -C '.data[] | select(.id=="'"${prompt#*model:}"'")')
 			# stop the spinner
@@ -935,11 +829,7 @@ while $running; do
 			echo -e "$OVERWRITE_PROCESSING_LINE"
 			echo -e "${SHELLPILOT_CYAN_LABEL}Complete details for model: ${prompt#*model:}\n ${model_data}"
 		elif [[ "$USE_API" == "mistralai" ]]; then
-			models_response=$(curl https://api.mistral.ai/v1/models\
-				-sS \
-				-H 'Content-Type: application/json' \
-				-H 'Accept: application/json' \
-				-H "Authorization: Bearer $MISTRAL_API_KEY")
+			models_response=$(fetch_model_from_mistralai)
 			model_data=$(echo $models_response | jq -r -C '.data[] | select(.id=="'"${prompt#*model:}"'")')
 			# stop the spinner
 			cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1

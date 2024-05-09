@@ -129,12 +129,12 @@ This script relies on curl for the requests to the api and jq to parse the json 
 
   - set the permissions
   ```shell
-  chmod +x s-pilot spilot_common.sh plugins/*.sh
+  chmod +x s-pilot spilot_common.sh spilot_llm_rq_apis.sh plugins/*.sh
   ```
 
   - Move the files to the dir
   ```shell
-  cp s-pilot spilot_common.sh ${new_config_path}
+  cp s-pilot spilot_common.sh spilot_llm_rq_apis.sh ${new_config_path}
 
   cp plugins/*.sh ${new_config_path}/plugins
   ```

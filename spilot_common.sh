@@ -7,7 +7,7 @@ OVERWRITE_PROCESSING_LINE="             \033[0K\r"
 COLUMNS=$(tput cols)
 
 # version: major.minor.patch
-SHELL_PILOT_VERSION=1.9.7
+SHELL_PILOT_VERSION=1.10.7
 
 # store directory
 SPILOT_FILES_DEFAULT_DIR=~/spilot_files_dir
@@ -16,7 +16,7 @@ SPILOT_FILES_DEFAULT_DIR=~/spilot_files_dir
 CACHE_MAX_AGE=3600
 LIST_MODELS_CACHE_FILE="$SPILOT_FILES_DEFAULT_DIR/models_list.cache"
 
-# Configuration settings
+# Configuration settings: ollama, openai, mistralai
 USE_API=ollama
 CURRENT_DATE=$(date +%m/%d/%Y)
 
