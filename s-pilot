@@ -4,8 +4,7 @@ SHELL_PILOT_CONFIG_PATH="/usr/local/bin"
 SHELL_PILOT_PLUGINS_PATH="${SHELL_PILOT_CONFIG_PATH}/plugins"
 COMMON_CONFIG_FILE="${SHELL_PILOT_CONFIG_PATH}/spilot_common.sh"
 source $COMMON_CONFIG_FILE
-# source "${SHELL_PILOT_CONFIG_PATH}/spilot_llm_rq_apis.sh"
-source "/Users/guliu/src/my_shell_pilot/spilot_llm_rq_apis.sh"
+source "${SHELL_PILOT_CONFIG_PATH}/spilot_llm_rq_apis.sh"
 source "${SHELL_PILOT_PLUGINS_PATH}/package_version.sh"
 source "${SHELL_PILOT_PLUGINS_PATH}/system_alias.sh"
 SPINNER_SIGNAL_FILE=${SPILOT_FILES_DEFAULT_DIR}/spilot_spinner_signal
