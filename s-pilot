@@ -154,6 +154,7 @@ show_llm_models_output(){
 	fi
 }
 
+
 # list the models
 list_models() {
     local cache_file="$LIST_MODELS_CACHE_FILE"
@@ -209,8 +210,6 @@ list_models() {
     show_llm_models_output
 }
 
-
-
 # fetch and cache the models
 fetch_and_cache_models() {
     local cache_file=$1
@@ -255,7 +254,6 @@ format_and_display() {
           '{name: $name, size: $size, format: $format, parameter_size: $parameter_size, quantization_level: $quantization_level}'
 }
 
-
 # build chat context before each request for /completions (all models except
 # gpt turbo and gpt 4)
 # $1 should be the escaped request prompt,
@@ -269,6 +267,7 @@ build_chat_context() {
 	fi
 }
 
+# format
 escape() {
 	echo "$1" | jq -Rrs 'tojson[1:-1]'
 }
@@ -368,6 +367,7 @@ update_config() {
     fi
 }
 
+# check the common settings
 check_the_setting(){
 	local setting_name="$1"
 	local setting_variable="$2"
