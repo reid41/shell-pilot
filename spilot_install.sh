@@ -61,6 +61,7 @@ PLUGINS_PATH="/usr/local/bin/plugins"
 # Define URLs for the script and configuration file
 SHELL_PILOT_SCRIPT_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/s-pilot"
 SHELL_PILOT_COMMON_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/spilot_common.sh"
+SHELL_PILOT_COMMON_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/spilot_llm_rq_apis.sh"
 SHELL_PILOT_PLUGINS_PV_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/plugins/package_version.sh"
 SHELL_PILOT_PLUGINS_SA_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/plugins/system_alias.sh"
 
@@ -107,12 +108,14 @@ shell_pilot_download_script "$SHELL_PILOT_SCRIPT_URL" "${INSTALL_PATH}/s-pilot" 
 
 # Download the configuration file spilot_common.sh
 shell_pilot_download_script "$SHELL_PILOT_COMMON_URL" "${INSTALL_PATH}/spilot_common.sh" || exit 1
+shell_pilot_download_script "$SHELL_PILOT_COMMON_URL" "${INSTALL_PATH}/spilot_llm_rq_apis.sh" || exit 1
 shell_pilot_download_script "$SHELL_PILOT_PLUGINS_PV_URL" "${PLUGINS_PATH}/package_version.sh" || exit 1
 shell_pilot_download_script "$SHELL_PILOT_PLUGINS_SA_URL" "${PLUGINS_PATH}/system_alias.sh" || exit 1
 
 # Optionally, set execute permissions
 chmod +x "${INSTALL_PATH}/s-pilot"
 chmod +x "${INSTALL_PATH}/spilot_common.sh"
+chmod +x "${INSTALL_PATH}/spilot_llm_rq_apis.sh"
 chmod +x "${PLUGINS_PATH}/package_version.sh"
 chmod +x "${PLUGINS_PATH}/system_alias.sh"
 
