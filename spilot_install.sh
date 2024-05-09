@@ -133,61 +133,98 @@ fi
 
 # Function to add environment variables to the user's shell profile
 add_to_profile() {
-  local profile_path=$1
-  echo "export OPENAI_KEY=$key" >> "$profile_path"
+  local profile_path="$1"
+  local api_key="$2"
+  local api_key_name="$3"
+
+  echo "export $api_key_name='$api_key'" >> "$profile_path"
   if [[ ":$PATH:" != *":/usr/local/bin:"* ]]; then
-    echo 'export PATH=$PATH:/usr/local/bin' >> "$profile_path"
+    echo 'export PATH="$PATH:/usr/local/bin"' >> "$profile_path"
   fi
-  echo "OpenAI key and PATH were added to $profile_path"
+  echo "$api_key_name and PATH were added to $profile_path"
   source "$profile_path"
 }
 
-# Function to validate the OpenAI key installation
+# Function to validate the installation of API keys
 validate_installation() {
-  if [[ "$OPENAI_KEY" != "$key" ]]; then
-    echo "Failed to set OPENAI_KEY correctly."
+  local api_key_name=$1
+  local api_key=$2
+
+  if [[ "${!api_key_name}" != "$api_key" ]]; then
+    echo "Failed to set $api_key_name correctly."
     return 1
   fi
 
-  if [[ ":$PATH:" != *":/usr/local/bin:"* ]]; then
-    echo "Failed to add /usr/local/bin to PATH."
-    return 1
-  fi
-
-  echo "Verification successful: OPENAI_KEY and PATH are correctly set."
+  echo "Verification successful: $api_key_name is correctly set."
   return 0
 }
 
-echo "==> The script will add the OPENAI_KEY environment variable to your shell profile and add /usr/local/bin to your PATH."
+# Function to confirm the API key input
+ask_for_confirmation() {
+  local api_key_name="$1"
+  local api_key_value=""
+
+  while true; do
+    read -p "Please enter your $api_key_name (leave blank if not using): " api_key_value
+    if [[ -z "$api_key_value" ]]; then
+      echo ""
+      break
+    fi
+    
+    # request confirmation
+    while true; do
+      read -p "Is this correct? (Y/n to confirm, any other key to re-enter): " confirm
+      case $confirm in
+        [Yy]* ) echo $api_key_value; return;;  # confirm the API key
+        [Nn]* | * )
+          read -p "Please re-enter your $api_key_name:" re_enter_key
+          api_key_value=$re_enter_key
+          continue;;  # re-enter the API key
+      esac
+    done
+  done
+}
+
+
+# Function to get and confirm API key
+get_and_confirm_api_key() {
+  local api_key_name="$1"
+  local api_key_value=""
+
+  # Keep asking until a valid confirmation is received or input is left blank
+  api_key_value=$(ask_for_confirmation "$api_key_name")
+  echo $api_key_value
+}
+
+
+# Prompt the user to enter the API keys
+echo "==> The script will add the OPENAI_KEY and MISTRAL_API_KEY environment variables to your shell profile and add /usr/local/bin to your PATH."
 read -p "==> Would you like to continue? (y/n): " -n 1 -r
 echo
 
+
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-  read -p "Please enter your OpenAI API key: " key
+  openai_key=$(get_and_confirm_api_key "OpenAI API key")
+  mistral_key=$(get_and_confirm_api_key "Mistral API key")
 
-  # Determine which shell profile is present and add the OpenAI key
+  # Determine which shell profile is present and add the API keys
   if [ -f ~/.zprofile ]; then
-    add_to_profile ~/.zprofile
+    [[ ! -z "$openai_key" ]] && echo "export OPENAI_KEY='$openai_key'" >> ~/.zprofile
+    [[ ! -z "$mistral_key" ]] && echo "export MISTRAL_API_KEY='$mistral_key'" >> ~/.zprofile
   elif [ -f ~/.zshrc ]; then
-    add_to_profile ~/.zshrc
+    [[ ! -z "$openai_key" ]] && echo "export OPENAI_KEY='$openai_key'" >> ~/.zshrc
+    [[ ! -z "$mistral_key" ]] && echo "export MISTRAL_API_KEY='$mistral_key'" >> ~/.zshrc
   elif [ -f ~/.bash_profile ]; then
-    add_to_profile ~/.bash_profile
+    [[ ! -z "$openai_key" ]] && echo "export OPENAI_KEY='$openai_key'" >> ~/.bash_profile
+    [[ ! -z "$mistral_key" ]] && echo "export MISTRAL_API_KEY='$mistral_key'" >> ~/.bash_profile
   elif [ -f ~/.profile ]; then
-    add_to_profile ~/.profile
+    [[ ! -z "$openai_key" ]] && echo "export OPENAI_KEY='$openai_key'" >> ~/.profile
+    [[ ! -z "$mistral_key" ]] && echo "export MISTRAL_API_KEY='$mistral_key'" >> ~/.profile
   else
-    echo "Could not find a known shell profile. Please manually add: export OPENAI_KEY=$key"
+    echo "Could not find a known shell profile. Please manually add your API keys."
   fi
-
-  # Verify the installation
-  if validate_installation; then
-    echo "Installation complete."
-  else
-    echo "Installation failed. Please check the errors above. Proceeding with additional settings."
-  fi
-else
-  echo "Installation aborted. Please follow the manual installation instructions if you wish to proceed later."
-  echo "https://github.com/reid41/shell-pilot/tree/main#manual-installation"
 fi
+
 
 # Function to check and append OLLAMA_SERVER_IP to the specified configuration file
 add_ollama_ip() {
@@ -206,10 +243,13 @@ add_ollama_ip() {
   else
     # The variable does not exist, prompt user for input
     while true; do
-      read -p "Enter the OLLAMA server IP address: " ip_address
+      read -p "Enter the OLLAMA server IP address[q to quit]: " ip_address
       if [[ $ip_address =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         echo "OLLAMA_SERVER_IP=$ip_address" >> "$config_file"
         echo "OLLAMA_SERVER_IP added to $config_file"
+        break
+      elif [[ "$ip_address" == "q" ]]; then
+        echo "OLLAMA_SERVER_IP not added."
         break
       else
         echo "Error: Invalid IP address entered. Please enter a valid IP address."
