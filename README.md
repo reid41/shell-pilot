@@ -481,11 +481,15 @@ This script relies on curl for the requests to the api and jq to parse the json 
   - The default model used when starting the script is `gpt-3.5-turbo` for OpenAI.
   
   - The default model used when starting the script is `llama2` for Ollama.
+
+  - The default model used when starting the script is `mistral-small` for MistralAI.
   
 ### Use other models for OpenAI or Ollama
   - If you have access to the GPT4 model you can use it by setting the model to `gpt-4`, i.e. `s-pilot --model gpt-4`.
 
-  - For `Ollama`, you can pull first from the ollama server, i.e. `ollama pull mistral`.
+  - For `Ollama`, you can pull first from the ollama server, i.e. `ollama pull mistral`, `s-pilot e` to set.
+
+  - For `MistralAI`, you can check with `s-pilot lm`, and set with `s-pilot e`.
 
 ### Set request parameters
 
