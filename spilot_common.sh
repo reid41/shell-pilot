@@ -7,7 +7,7 @@ OVERWRITE_PROCESSING_LINE="             \033[0K\r"
 COLUMNS=$(tput cols)
 
 # version: major.minor.patch
-SHELL_PILOT_VERSION=1.10.7
+SHELL_PILOT_VERSION=1.11.7
 
 # store directory
 SPILOT_FILES_DEFAULT_DIR=~/spilot_files_dir
@@ -17,7 +17,7 @@ CACHE_MAX_AGE=3600
 LIST_MODELS_CACHE_FILE="$SPILOT_FILES_DEFAULT_DIR/models_list.cache"
 
 # Configuration settings: ollama, openai, mistralai
-USE_API=ollama
+USE_API=localai
 CURRENT_DATE=$(date +%m/%d/%Y)
 
 # Set default values for Ollama settings
@@ -38,6 +38,12 @@ if [ "$USE_API" == "mistralai" ]; then
     ORGANIZATION="Mistral AI"
 fi
 
+# Adjust settings for Mistral AI API
+if [ "$USE_API" == "localai" ]; then
+    MODEL_NAME="LocalAI"
+    ORGANIZATION="LocalAI"
+fi
+
 # Define prompts using the adjusted settings
 CHAT_INIT_PROMPT="You are $MODEL_NAME, a Large Language Model trained by $ORGANIZATION. You will be answering questions from users. Answer as concisely as possible for each response. Keep the number of items short. Output your answer directly, with no labels in front. Do not start your answers with 'A' or 'Answer'. You were trained on data up until 2023. Today's date is $CURRENT_DATE"
 SYSTEM_PROMPT="You are $MODEL_NAME, a large language model trained by $ORGANIZATION. Answer as concisely as possible. Current date: $CURRENT_DATE. Knowledge cutoff: 9/1/2023."
@@ -49,6 +55,7 @@ MAX_TOKENS=4096
 MODEL_OPENAI=gpt-3.5-turbo
 MODEL_OLLAMA=llama2
 MODEL_MISTRALAI=mistral-small
+MODEL_LOCALAI=gpt-4
 CONTEXT=false
 MULTI_LINE_PROMPT=false
 ENABLE_DANGER_FLAG=false

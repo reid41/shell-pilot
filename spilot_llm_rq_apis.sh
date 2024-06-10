@@ -29,6 +29,17 @@ request_to_completions() {
 			"max_tokens": '$MAX_TOKENS',
 			"temperature": '$TEMPERATURE'
 			}'
+	elif [[ "$USE_API" == "localai" ]]
+	then
+		curl http://${LOCALAI_SERVER_IP}:8080/v1/completions \
+		-sS \
+		-H 'Content-Type: application/json' \
+		-d '{
+			"model": "'"$MODEL_LOCALAI"'",
+			"prompt": "'"$prompt"'",
+			"max_tokens": '$MAX_TOKENS',
+			"temperature": '$TEMPERATURE'
+			}'
 	elif [[ "$USE_API" == "mistralai" ]]
 	then 
 		curl https://api.mistral.ai/v1/chat/completions \
@@ -83,6 +94,19 @@ request_to_chat() {
 				"max_tokens": '$MAX_TOKENS',
 				"temperature": '$TEMPERATURE'
 				}'
+	elif [[ "$USE_API" == "localai" ]]
+	then
+		curl http://${LOCALAI_SERVER_IP}:8080/v1/chat/completions \
+			-sS \
+			-H 'Content-Type: application/json' \
+			-d '{
+				"model": "'"$MODEL_LOCALAI"'",
+				"messages": [
+					{"role": "system", "content": "'"$escaped_system_prompt"'"},
+					'"$message"'
+					],
+				"temperature": '$TEMPERATURE'
+				}'			
 	elif [[ "$USE_API" == "mistralai" ]]
 	then 
 		curl https://api.mistral.ai/v1/chat/completions \
@@ -113,6 +137,10 @@ fetch_model_from_openai(){
     curl https://api.openai.com/v1/models \
     -sS \
     -H "Authorization: Bearer $OPENAI_KEY"
+}
+
+fetch_model_from_localai(){
+    curl http://${LOCALAI_SERVER_IP}:8080/v1/models
 }
 
 fetch_model_from_mistralai(){
