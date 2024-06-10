@@ -2,7 +2,7 @@
   <img src="https://github.com/reid41/shell-pilot/assets/25558653/7d99c212-4b5c-456d-907d-20df16112cd5" alt="shell-pilot">
 </p>
 
-A simple, lightweight shell script to interact with `OpenAI` or `Ollama` or `Mistral AI` from the terminal, and enhancing intelligent system management without any dependencies(pure shell).
+A simple, lightweight shell script to interact with `OpenAI` or `Ollama` or `Mistral AI` or `LocalAI` from the terminal, and enhancing intelligent system management without any dependencies(pure shell).
 </div>
 
 ## Features
@@ -10,6 +10,7 @@ A simple, lightweight shell script to interact with `OpenAI` or `Ollama` or `Mis
 - Based on [Ollama](https://ollama.com/) to setup a local LLM repository(`support llama3`), work with [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
 - Use the official chatgpt model with the [official ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis) from the terminal
 - Use the official Mistral AI model with the [Mistral AI API](https://docs.mistral.ai/)
+- Use the LocalAI model with the [LocalAI API](https://localai.io/)
 - View your history and session persistence
 - Chat context, GPT remembers previous chat questions and answers
 - Pass the input prompt with pipe/redirector(`|`, `<`), as a script parameter or normal chat mode(bash version: 4.0+)
@@ -64,11 +65,21 @@ This script relies on curl for the requests to the api and jq to parse the json 
 
 ### Installation
 
-   - Setup `Ollama` environment, [Manual install instructions](https://github.com/ollama/ollama/blob/main/docs/linux.md), [ollama usage](https://github.com/ollama/ollama), and [Ollama model library](https://ollama.com/library)
+   - For setup `Ollama` environment, [Manual install instructions](https://github.com/ollama/ollama/blob/main/docs/linux.md), [ollama usage](https://github.com/ollama/ollama), and [Ollama model library](https://ollama.com/library)
    ```sh
    curl -fsSL https://ollama.com/install.sh | sh
 
    ollama pull llama2  # used llama2 by default
+   ```
+
+   - For setup `LocalAI` environment, [Manual](https://localai.io/), and [LocalAI github](https://github.com/mudler/LocalAI)
+   ```sh
+   docker run -p 8080:8080 --name local-ai -ti localai/localai:latest-aio-cpu
+   # Do you have a Nvidia GPUs? Use this instead
+   # CUDA 11
+   # docker run -p 8080:8080 --gpus all --name local-ai -ti localai/localai:latest-aio-gpu-nvidia-cuda-11
+   # CUDA 12
+   # docker run -p 8080:8080 --gpus all --name local-ai -ti localai/localai:latest-aio-gpu-nvidia-cuda-12
    ```
 
    - To install, run this in your terminal and provide your OpenAI API key when asked.
@@ -125,6 +136,10 @@ This script relies on curl for the requests to the api and jq to parse the json 
   # add ollama server host
   ollama_server_ip_address=<ip>
   echo "OLLAMA_SERVER_IP=${ollama_server_ip_address}" >> spilot_common.sh
+
+  # add localai server host
+  localai_server_ip_address=<ip>
+  echo "LOCALAI_SERVER_IP=${localai_server_ip_address}" >> spilot_common.sh
   ```
 
   - set the permissions
