@@ -61,7 +61,7 @@ PLUGINS_PATH="/usr/local/bin/plugins"
 # Define URLs for the script and configuration file
 SHELL_PILOT_SCRIPT_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/s-pilot"
 SHELL_PILOT_COMMON_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/spilot_common.sh"
-SHELL_PILOT_COMMON_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/spilot_llm_rq_apis.sh"
+SHELL_PILOT_API_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/spilot_llm_rq_apis.sh"
 SHELL_PILOT_PLUGINS_PV_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/plugins/package_version.sh"
 SHELL_PILOT_PLUGINS_SA_URL="https://raw.githubusercontent.com/reid41/shell-pilot/main/plugins/system_alias.sh"
 
@@ -108,7 +108,7 @@ shell_pilot_download_script "$SHELL_PILOT_SCRIPT_URL" "${INSTALL_PATH}/s-pilot" 
 
 # Download the configuration file spilot_common.sh
 shell_pilot_download_script "$SHELL_PILOT_COMMON_URL" "${INSTALL_PATH}/spilot_common.sh" || exit 1
-shell_pilot_download_script "$SHELL_PILOT_COMMON_URL" "${INSTALL_PATH}/spilot_llm_rq_apis.sh" || exit 1
+shell_pilot_download_script "$SHELL_PILOT_API_URL" "${INSTALL_PATH}/spilot_llm_rq_apis.sh" || exit 1
 shell_pilot_download_script "$SHELL_PILOT_PLUGINS_PV_URL" "${PLUGINS_PATH}/package_version.sh" || exit 1
 shell_pilot_download_script "$SHELL_PILOT_PLUGINS_SA_URL" "${PLUGINS_PATH}/system_alias.sh" || exit 1
 
@@ -229,30 +229,31 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 
-# Function to check and append OLLAMA_SERVER_IP to the specified configuration file
-add_ollama_ip() {
+# Function to check and append server IP to the specified configuration file
+add_server_ip() {
   local config_file=$1
+  local server_var_name=$2
 
-  # Check if the OLLAMA_SERVER_IP variable already exists in the configuration file
-  if grep -q "OLLAMA_SERVER_IP=" "$config_file"; then
-    local existing_ip=$(grep "OLLAMA_SERVER_IP=" "$config_file" | cut -d'=' -f2)
+  # Check if the server IP variable already exists in the configuration file
+  if grep -q "^$server_var_name=" "$config_file"; then
+    local existing_ip=$(grep "^$server_var_name=" "$config_file" | cut -d'=' -f2)
     if [[ $existing_ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-      echo "OLLAMA_SERVER_IP is already set to a valid IP address: $existing_ip"
+      echo "$server_var_name is already set to a valid IP address: $existing_ip"
       return 0
     else
-      echo "Error: OLLAMA_SERVER_IP is set but not valid: $existing_ip"
+      echo "Error: $server_var_name is set but not valid: $existing_ip"
       return 1
     fi
   else
     # The variable does not exist, prompt user for input
     while true; do
-      read -p "Enter the OLLAMA server IP address[q to quit]: " ip_address
+      read -p "Enter the $server_var_name (q to quit): " ip_address
       if [[ $ip_address =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        echo "OLLAMA_SERVER_IP=$ip_address" >> "$config_file"
-        echo "OLLAMA_SERVER_IP added to $config_file"
+        echo "$server_var_name=$ip_address" >> "$config_file"
+        echo "$server_var_name added to $config_file"
         break
       elif [[ "$ip_address" == "q" ]]; then
-        echo "OLLAMA_SERVER_IP not added."
+        echo "$server_var_name not added."
         break
       else
         echo "Error: Invalid IP address entered. Please enter a valid IP address."
@@ -265,8 +266,15 @@ add_ollama_ip() {
 CONFIG_FILE="${INSTALL_PATH}/spilot_common.sh"
 
 # Check and append OLLAMA_SERVER_IP
-if add_ollama_ip "$CONFIG_FILE"; then
-  echo "Operation successful."
+if add_server_ip "$CONFIG_FILE" "OLLAMA_SERVER_IP"; then
+  echo "Operation successful for OLLAMA_SERVER_IP."
 else
-  echo "Operation failed. Please check the errors above."
+  echo "Operation failed for OLLAMA_SERVER_IP. Please check the errors above."
+fi
+
+# Check and append LOCALAI_SERVER_IP
+if add_server_ip "$CONFIG_FILE" "LOCALAI_SERVER_IP"; then
+  echo "Operation successful for LOCALAI_SERVER_IP."
+else
+  echo "Operation failed for LOCALAI_SERVER_IP. Please check the errors above."
 fi
