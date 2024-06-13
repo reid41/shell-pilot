@@ -94,6 +94,21 @@ request_to_chat() {
 				"max_tokens": '$MAX_TOKENS',
 				"temperature": '$TEMPERATURE'
 				}'
+	elif [[ "$USE_API" == "zhipuai" ]]
+	then
+		curl https://open.bigmodel.cn/api/paas/v4/chat/completions \
+			-sS \
+			-H 'Content-Type: application/json' \
+			-H "Authorization: Bearer $ZHIPUAI_API_KEY" \
+			-d '{
+				"model": "'"$MODEL_ZHIPUAI"'",
+				"messages": [
+					{"role": "system", "content": "'"$escaped_system_prompt"'"},
+					'"$message"'
+					],
+				"max_tokens": '$MAX_TOKENS',
+				"temperature": '$TEMPERATURE'
+				}'
 	elif [[ "$USE_API" == "localai" ]]
 	then
 		curl http://${LOCALAI_SERVER_IP}:8080/v1/chat/completions \

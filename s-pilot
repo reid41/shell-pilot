@@ -23,6 +23,13 @@ if [[ -z "$MISTRAL_API_KEY" && "$USE_API" == "mistralai" ]]; then
 	exit 1
 fi
 
+# check if the ZHIPUAI_API_KEY is set
+if [[ -z "$ZHIPUAI_API_KEY" && "$USE_API" == "zhipuai" ]]; then
+	echo "You need to set your ZHIPUAI_API_KEY to use this script!"
+	echo "You can set it temporarily by running this on your terminal: export ZHIPUAI_API_KEY=YOUR_KEY_HERE"
+	exit 1
+fi
+
 # check if the OLLAMA host is set
 if [[ "$USE_API" == "ollama" ]]; then
 	if [[ -z "$OLLAMA_SERVER_IP" ]]; then
@@ -55,15 +62,12 @@ Open Source and written in 100% Shell (Bash).
 
 https://github.com/reid41/shell-pilot.git
 
-For OpenAI:
-By default the script uses the "gpt-3.5-turbo" model. 
-It will upgrade to "gpt-4" when the API is accessible to anyone.
-
-For Ollama:
-By default the script uses the "llama2" model.
-
-For MistralAI:
-By default the script uses the "mistral-small" model.
+For default model:
+OpenAI: "gpt-3.5-turbo" model
+Ollama: "llama2" model.
+MistralAI: "mistral-small" model.
+LocalAI: "gpt-4" model.
+ZhipuAI: "glm-4" model.
 
 It will enter "chat" mode without any options, here are some commands you can use:
 
@@ -74,7 +78,7 @@ Commands:
   cmd: - To get a command with the specified functionality and run it, just type "cmd:" and explain what you want to achieve. The script will always ask you if you want to execute the command.
 
 Options:
-  cmp, -cmp, --change-model-provider   Change the model provider between openai, ollama, mistralai, localai
+  cmp, -cmp, --change-model-provider   Change the model provider between openai, ollama, mistralai, localai, zhipuai
 
   e, -e, --edit                        Edit the configuration file directly
 
@@ -226,6 +230,8 @@ list_models() {
     show_llm_models_output
 }
 
+
+
 # fetch and cache the models
 fetch_and_cache_models() {
     local cache_file=$1
@@ -272,6 +278,7 @@ format_and_display() {
           --arg quantization_level "$quantization_level" \
           '{name: $name, size: $size, format: $format, parameter_size: $parameter_size, quantization_level: $quantization_level}'
 }
+
 
 # build chat context before each request for /completions (all models except
 # gpt turbo and gpt 4)
@@ -493,6 +500,8 @@ code_chat_function(){
 			elif [[ "$USE_API" == "localai" ]]; then
 				response_data=$(echo $response | jq -r '.choices[].message.content')
 			elif [[ "$USE_API" == "mistralai" ]]; then
+				response_data=$(echo $response | jq -r '.choices[].message.content')
+			elif [[ "$USE_API" == "zhipuai" ]]; then
 				response_data=$(echo $response | jq -r '.choices[].message.content')
 			fi
 			add_assistant_response_to_chat_message "$(escape "$response_data")"
@@ -719,6 +728,9 @@ while [[ "$#" -gt 0 ]]; do
 		elif [[ "$USE_API" == "ollama" ]]; then
 			update_config "$2" "MODEL_OLLAMA"
 			check_the_setting "ollama model" "MODEL_OLLAMA"
+		elif [[ "$USE_API" == "zhipuai" ]]; then
+			update_config "$2" "MODEL_ZHIPUAI"
+			check_the_setting "zhipuai model" "MODEL_ZHIPUAI"
 		fi
 		;;
 	mlp | -mlp | --multi-line-prompt)
@@ -738,7 +750,7 @@ while [[ "$#" -gt 0 ]]; do
 	cmp | -cmp | --change-model-provider)
 		validate_not_empty "$2"
 		# check if the model provider is valid
-		if [[ "$2" == "openai" || "$2" == "ollama" || "$2" == "mistralai" || "$2" == "localai" ]]; then
+		if [[ "$2" == "openai" || "$2" == "ollama" || "$2" == "mistralai" || "$2" == "localai"  || "$2" == "zhipuai" ]]; then
 			# update the model provider
 			update_config "$2" "USE_API"
 			# clean the cache
@@ -746,7 +758,7 @@ while [[ "$#" -gt 0 ]]; do
 			check_the_setting "model provider" "USE_API"
 		else
 			# print error message and exit if the model provider is invalid
-			echo -e "Error: Invalid model provider. Please choose \033[1;36mopenai\033[0m or \033[1;37mmistralai\033[0m or \033[1;35mollama\033[0m."
+			echo -e "Error: Invalid model provider. Please choose \033[1;36mopenai\033[0m or \033[1;37mmistralai\033[0m or \033[1;35mollama\033[0m or \033[1;35mlocalai\033[0m or \033[1;35mzhipuai\033[0m."
 			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 1 || exit 1
 		fi
 		;;
@@ -921,6 +933,8 @@ while $running; do
 			response_data=$(echo $response | jq -r '.choices[].message.content')
 		elif [[ "$USE_API" == "mistralai" ]]; then
 			response_data=$(echo $response | jq -r '.choices[].message.content')
+		elif [[ "$USE_API" == "zhipuai" ]]; then
+			response_data=$(echo $response | jq -r '.choices[].message.content')
 		fi
 
 		if [[ "$prompt" =~ ^cmd: ]]; then
@@ -964,7 +978,7 @@ while $running; do
 		timestamp=$(date +"%Y-%m-%d %H:%M")
 		echo -e "$timestamp $prompt \n$response_data \n" >> $SIPLOT_HISTORY_FILE
 
-	elif [[ "$MODEL_OPENAI" =~ ^gpt- || "$USE_API" == "ollama" ]]; then
+	elif [[ "$MODEL_OPENAI" =~ ^gpt- || "$USE_API" == "ollama" || "$USE_API" == "mistralai" || "$USE_API" == "localai" || "$USE_API" == "zhipuai" ]]; then
 		# escape quotation marks, new lines, backslashes...
 		# enable chat record flag
 		if [[ "$chat_record_flag" == "true" ]]; then
@@ -989,6 +1003,8 @@ while $running; do
 		elif [[ "$USE_API" == "localai" ]]; then
 			response_data=$(echo $response | jq -r '.choices[].message.content')
 		elif [[ "$USE_API" == "mistralai" ]]; then
+			response_data=$(echo $response | jq -r '.choices[].message.content')
+		elif [[ "$USE_API" == "zhipuai" ]]; then
 			response_data=$(echo $response | jq -r '.choices[].message.content')
 		fi
 
