@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # This script is used to call the APIs of the SPilot LLM service.
 # request to OpenAI API/ollama/mistral completions endpoint function
 # $1 should be the request prompt
@@ -133,6 +132,21 @@ request_to_chat() {
 			"model": "'"$MODEL_MISTRALAI"'",
 			"messages": [
 				{"role": "system", "content": "'"$escaped_system_prompt"'"},
+				'"$message"'
+				],
+			"max_tokens": '$MAX_TOKENS',
+			"temperature": '$TEMPERATURE'
+		}'
+	elif [[ "$USE_API" == "anthropic" ]]
+	then 
+		curl https://api.anthropic.com/v1/messages \
+		-sS \
+		--header "x-api-key: $ANTHROPIC_API_KEY" \
+		--header "anthropic-version: 2023-06-01" \
+		--header "content-type: application/json" \
+		-d '{
+			"model": "'"$MODEL_ANTHROPIC"'",
+			"messages": [
 				'"$message"'
 				],
 			"max_tokens": '$MAX_TOKENS',

@@ -201,7 +201,7 @@ get_and_confirm_api_key() {
 
 
 # Prompt the user to enter the API keys
-echo "==> The script will add the OPENAI_KEY and MISTRAL_API_KEY environment variables to your shell profile and add /usr/local/bin to your PATH."
+echo "==> The script will add the OPENAI_KEY/MISTRAL_API_KEY/ZHIPUAI_API_KEY/ANTHROPIC_API_KEY environment variables to your shell profile and add /usr/local/bin to your PATH."
 read -p "==> Would you like to continue? (y/n): " -n 1 -r
 echo
 
@@ -210,24 +210,29 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
   openai_key=$(get_and_confirm_api_key "OpenAI API key")
   mistral_key=$(get_and_confirm_api_key "Mistral API key")
   zhipuai_key=$(get_and_confirm_api_key "ZhipuAI API key")
+  anthropic_key=$(get_and_confirm_api_key "Anthropic API key")
 
   # Determine which shell profile is present and add the API keys
   if [ -f ~/.zprofile ]; then
     [[ ! -z "$openai_key" ]] && echo "export OPENAI_KEY='$openai_key'" >> ~/.zprofile
     [[ ! -z "$mistral_key" ]] && echo "export MISTRAL_API_KEY='$mistral_key'" >> ~/.zprofile
     [[ ! -z "$zhipuai_key" ]] && echo "export ZHIPUAI_API_KEY='$zhipuai_key'" >> ~/.zprofile
+    [[ ! -z "$anthropic_key" ]] && echo "export ANTHROPIC_API_KEY='$anthropic_key'" >> ~/.zprofile
   elif [ -f ~/.zshrc ]; then
     [[ ! -z "$openai_key" ]] && echo "export OPENAI_KEY='$openai_key'" >> ~/.zshrc
     [[ ! -z "$mistral_key" ]] && echo "export MISTRAL_API_KEY='$mistral_key'" >> ~/.zshrc
     [[ ! -z "$zhipuai_key" ]] && echo "export ZHIPUAI_API_KEY='$zhipuai_key'" >> ~/.zshrc
+    [[ ! -z "$anthropic_key" ]] && echo "export ANTHROPIC_API_KEY='$anthropic_key'" >> ~/.zshrc
   elif [ -f ~/.bash_profile ]; then
     [[ ! -z "$openai_key" ]] && echo "export OPENAI_KEY='$openai_key'" >> ~/.bash_profile
     [[ ! -z "$mistral_key" ]] && echo "export MISTRAL_API_KEY='$mistral_key'" >> ~/.bash_profile
     [[ ! -z "$zhipuai_key" ]] && echo "export ZHIPUAI_API_KEY='$zhipuai_key'" >> ~/.bash_profile
+    [[ ! -z "$anthropic_key" ]] && echo "export ANTHROPIC_API_KEY='$anthropic_key'" >> ~/.bash_profile
   elif [ -f ~/.profile ]; then
     [[ ! -z "$openai_key" ]] && echo "export OPENAI_KEY='$openai_key'" >> ~/.profile
     [[ ! -z "$mistral_key" ]] && echo "export MISTRAL_API_KEY='$mistral_key'" >> ~/.profile
     [[ ! -z "$zhipuai_key" ]] && echo "export ZHIPUAI_API_KEY='$zhipuai_key'" >> ~/.profile
+    [[ ! -z "$anthropic_key" ]] && echo "export ANTHROPIC_API_KEY='$anthropic_key'" >> ~/.profile
   else
     echo "Could not find a known shell profile. Please manually add your API keys."
   fi

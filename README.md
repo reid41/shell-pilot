@@ -2,7 +2,7 @@
   <img src="https://github.com/reid41/shell-pilot/assets/25558653/7d99c212-4b5c-456d-907d-20df16112cd5" alt="shell-pilot">
 </p>
 
-A simple, lightweight shell script to interact with `OpenAI` or `Ollama` or `Mistral AI` or `LocalAI` or `ZhipuAI` from the terminal, and enhancing intelligent system management without any dependencies(pure shell).
+A simple, lightweight shell script to interact with `OpenAI` or `Ollama` or `Mistral AI` or `LocalAI` or `ZhipuAI` or `Athropic` from the terminal, and enhancing intelligent system management without any dependencies(pure shell).
 </div>
 
 ## Features
@@ -12,6 +12,7 @@ A simple, lightweight shell script to interact with `OpenAI` or `Ollama` or `Mis
 - Use the official Mistral AI model with the [Mistral AI API](https://docs.mistral.ai/)
 - Use the LocalAI model with the [LocalAI API](https://localai.io/)
 - Use the ZhipuAI model with the [ZhipuAI API](https://open.bigmodel.cn/)
+- Use the Anthropic model with the [Anthropic API](https://docs.anthropic.com/en/api/getting-started)
 - View your history and session persistence
 - Chat context, GPT remembers previous chat questions and answers
 - Pass the input prompt with pipe/redirector(`|`, `<`), as a script parameter or normal chat mode(bash version: 4.0+)
@@ -178,6 +179,10 @@ This script relies on curl for the requests to the api and jq to parse the json 
   # zhipuai ai
   zhipuai_api_key_value=<key>
   echo "export ZHIPUAI_API_KEY=${zhipuai_api_key_value}" >> $the_profile_file
+
+  # anthropic ai
+  anthropic_api_key_value=<key>
+  echo "export ANTHROPIC_API_KEY=${anthropic_api_key_value}" >> $the_profile_file
 
   source $the_profile_file
   ```
