@@ -17,7 +17,7 @@ CACHE_MAX_AGE=3600
 LIST_MODELS_CACHE_FILE="$SPILOT_FILES_DEFAULT_DIR/models_list.cache"
 
 # Configuration settings: ollama, openai, mistralai
-USE_API=anthropic
+USE_API=ollama
 CURRENT_DATE=$(date +%m/%d/%Y)
 
 # Set default values for Ollama settings
