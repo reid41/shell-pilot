@@ -30,6 +30,13 @@ if [[ -z "$ZHIPUAI_API_KEY" && "$USE_API" == "zhipuai" ]]; then
 	exit 1
 fi
 
+# check if the ZHIPUAI_API_KEY is set
+if [[ -z "$ANTHROPIC_API_KEY" && "$USE_API" == "athropic" ]]; then
+	echo "You need to set your ANTHROPIC_API_KEY to use this script!"
+	echo "You can set it temporarily by running this on your terminal: export ANTHROPIC_API_KEY=YOUR_KEY_HERE"
+	exit 1
+fi
+
 # check if the OLLAMA host is set
 if [[ "$USE_API" == "ollama" ]]; then
 	if [[ -z "$OLLAMA_SERVER_IP" ]]; then
@@ -57,7 +64,8 @@ fi
 usage() {
 	cat <<EOF
 A simple, lightweight shell script to use OpenAI's Language Models and DALL-E 
-or Ollama models or MistralAI models or LocalAI from the terminal without installing Python or Node.js.
+or Ollama models or MistralAI models or LocalAI or ZhupuAI or Anthropic models
+from the terminal without installing Python or Node.js.
 Open Source and written in 100% Shell (Bash).
 
 https://github.com/reid41/shell-pilot.git
@@ -68,17 +76,19 @@ Ollama: "llama2" model.
 MistralAI: "mistral-small" model.
 LocalAI: "gpt-4" model.
 ZhipuAI: "glm-4" model.
+Anthropic: "claude-3-opus-20240229" model.
 
 It will enter "chat" mode without any options, here are some commands you can use:
 
 Commands:
   history - To view your chat history
-  models - To get a list of the models available at OpenAI API
+  models - To get a list of the models available at OpenAI/localai/ollama/mistralai
   model: - To view all the information on a specific model, start a prompt with model: and the model id as it appears in the list of models. For example: "model:text-babbage:001" will get you all the fields for text-babbage:001 model
   cmd: - To get a command with the specified functionality and run it, just type "cmd:" and explain what you want to achieve. The script will always ask you if you want to execute the command.
 
 Options:
-  cmp, -cmp, --change-model-provider   Change the model provider between openai, ollama, mistralai, localai, zhipuai
+  cmp, -cmp, --change-model-provider   Change the model provider between openai, 
+                                       ollama, mistralai, localai, zhipuai, anthropic
 
   e, -e, --edit                        Edit the configuration file directly
 
@@ -323,10 +333,11 @@ maintain_chat_context() {
 # it extends $chat_message
 build_user_chat_message() {
 	local escaped_request_prompt="$1"
-	if [ -z "$chat_message" ]; then
+	if [ -z "$chat_message" ]; then	
 		chat_message="{\"role\": \"user\", \"content\": \"$escaped_request_prompt\"}"
 	else
 		chat_message="$chat_message, {\"role\": \"user\", \"content\": \"$escaped_request_prompt\"}"
+		
 	fi
 }
 
@@ -503,6 +514,8 @@ code_chat_function(){
 				response_data=$(echo $response | jq -r '.choices[].message.content')
 			elif [[ "$USE_API" == "zhipuai" ]]; then
 				response_data=$(echo $response | jq -r '.choices[].message.content')
+			elif [[ "$USE_API" == "anthropic" ]]; then
+				response_data=$(echo $response | jq -r '.content[0].text')
 			fi
 			add_assistant_response_to_chat_message "$(escape "$response_data")"
 			# execute_cmd=$(echo "$response_data" | sed 's/[`$]//g')
@@ -731,6 +744,9 @@ while [[ "$#" -gt 0 ]]; do
 		elif [[ "$USE_API" == "zhipuai" ]]; then
 			update_config "$2" "MODEL_ZHIPUAI"
 			check_the_setting "zhipuai model" "MODEL_ZHIPUAI"
+		elif [[ "$USE_API" == "anthropic" ]]; then
+			update_config "$2" "MODEL_ANTHROPIC"
+			check_the_setting "anthropic model" "MODEL_ANTHROPIC"
 		fi
 		;;
 	mlp | -mlp | --multi-line-prompt)
@@ -750,7 +766,7 @@ while [[ "$#" -gt 0 ]]; do
 	cmp | -cmp | --change-model-provider)
 		validate_not_empty "$2"
 		# check if the model provider is valid
-		if [[ "$2" == "openai" || "$2" == "ollama" || "$2" == "mistralai" || "$2" == "localai"  || "$2" == "zhipuai" ]]; then
+		if [[ "$2" == "openai" || "$2" == "ollama" || "$2" == "mistralai" || "$2" == "localai"   || "$2" == "zhipuai" || "$2" == "anthropic" ]]; then
 			# update the model provider
 			update_config "$2" "USE_API"
 			# clean the cache
@@ -758,7 +774,7 @@ while [[ "$#" -gt 0 ]]; do
 			check_the_setting "model provider" "USE_API"
 		else
 			# print error message and exit if the model provider is invalid
-			echo -e "Error: Invalid model provider. Please choose \033[1;36mopenai\033[0m or \033[1;37mmistralai\033[0m or \033[1;35mollama\033[0m or \033[1;35mlocalai\033[0m or \033[1;35mzhipuai\033[0m."
+			echo -e "Error: Invalid model provider. Please choose \033[1;36mopenai\033[0m or \033[1;37mmistralai\033[0m or \033[1;35mollama\033[0m or \033[1;35mlocalai\033[0m or \033[1;35mzhipuai\033[0m or \033[1;35manthropic\033[0m."
 			[[ "${BASH_SOURCE[0]}" != "$0" ]] && return 1 || exit 1
 		fi
 		;;
@@ -935,6 +951,8 @@ while $running; do
 			response_data=$(echo $response | jq -r '.choices[].message.content')
 		elif [[ "$USE_API" == "zhipuai" ]]; then
 			response_data=$(echo $response | jq -r '.choices[].message.content')
+		elif [[ "$USE_API" == "anthropic" ]]; then
+			response_data=$(echo $response | jq -r '.content[0].text')
 		fi
 
 		if [[ "$prompt" =~ ^cmd: ]]; then
@@ -978,7 +996,7 @@ while $running; do
 		timestamp=$(date +"%Y-%m-%d %H:%M")
 		echo -e "$timestamp $prompt \n$response_data \n" >> $SIPLOT_HISTORY_FILE
 
-	elif [[ "$MODEL_OPENAI" =~ ^gpt- || "$USE_API" == "ollama" || "$USE_API" == "mistralai" || "$USE_API" == "localai" || "$USE_API" == "zhipuai" ]]; then
+	elif [[ "$MODEL_OPENAI" =~ ^gpt- || "$USE_API" == "ollama" || "$USE_API" == "mistralai" || "$USE_API" == "localai" || "$USE_API" == "zhipuai" || "$USE_API" == "anthropic" ]]; then
 		# escape quotation marks, new lines, backslashes...
 		# enable chat record flag
 		if [[ "$chat_record_flag" == "true" ]]; then
@@ -1006,6 +1024,8 @@ while $running; do
 			response_data=$(echo $response | jq -r '.choices[].message.content')
 		elif [[ "$USE_API" == "zhipuai" ]]; then
 			response_data=$(echo $response | jq -r '.choices[].message.content')
+		elif [[ "$USE_API" == "anthropic" ]]; then
+			response_data=$(echo $response | jq -r '.content[0].text')
 		fi
 
 		echo -e "$OVERWRITE_PROCESSING_LINE"
