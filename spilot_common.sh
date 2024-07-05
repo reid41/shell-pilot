@@ -50,6 +50,11 @@ if [ "$USE_API" == "zhipuai" ]; then
     ORGANIZATION="ZhipuAI"
 fi
 
+if [ "$USE_API" == "moonshot" ]; then
+    MODEL_NAME="Moonshot"
+    ORGANIZATION="Moonshot"
+fi
+
 # Define prompts using the adjusted settings
 CHAT_INIT_PROMPT="You are $MODEL_NAME, a Large Language Model trained by $ORGANIZATION. You will be answering questions from users. Answer as concisely as possible for each response. Keep the number of items short. Output your answer directly, with no labels in front. Today's date is $CURRENT_DATE."
 SYSTEM_PROMPT="You are $MODEL_NAME, a large language model trained by $ORGANIZATION. Answer as concisely as possible. Current date: $CURRENT_DATE."
@@ -63,6 +68,7 @@ MODEL_OLLAMA=llama2
 MODEL_MISTRALAI=mistral-small
 MODEL_LOCALAI=gpt-4
 MODEL_ZHIPUAI=glm-4
+MODEL_MOONSHOT=moonshot-v1-8k
 MODEL_ANTHROPIC=claude-3-opus-20240229
 CONTEXT=false
 MULTI_LINE_PROMPT=false
