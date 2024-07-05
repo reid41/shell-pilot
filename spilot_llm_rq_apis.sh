@@ -152,6 +152,20 @@ request_to_chat() {
 			"max_tokens": '$MAX_TOKENS',
 			"temperature": '$TEMPERATURE'
 		}'
+	elif [[ "$USE_API" == "moonshot" ]]
+	then 
+		curl https://api.moonshot.cn/v1/chat/completions \
+		-sS \
+		-H "Content-Type: application/json" \
+		-H "Authorization: Bearer $MOONSHOT_API_KEY" \
+		-d '{
+			"model": "'"$MODEL_MOONSHOT"'",
+			"messages": [
+				{"role": "system", "content": "'"$escaped_system_prompt"'"},
+				'"$message"'
+				],
+			"max_tokens": '$MAX_TOKENS'
+		}'
 	else
 		echo "Error: No API specified".
 		exit 1
