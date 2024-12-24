@@ -166,6 +166,21 @@ request_to_chat() {
 				],
 			"max_tokens": '$MAX_TOKENS'
 		}'
+  elif [[ "$USE_API" == "novita" ]]
+  then 
+    curl https://api.novita.ai/v3/openai/chat/completions \
+    -sS \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $NOVITA_API_KEY" \
+    -d '{
+      "model": "'"$MODEL_NOVITA"'",
+      "messages": [
+        {"role": "system", "content": "'"$escaped_system_prompt"'"},
+        '"$message"'
+        ],
+      "max_tokens": '$MAX_TOKENS',
+      "temperature": '$TEMPERATURE'
+    }'
 	else
 		echo "Error: No API specified".
 		exit 1
@@ -192,4 +207,12 @@ fetch_model_from_mistralai(){
     -H 'Content-Type: application/json' \
     -H 'Accept: application/json' \
     -H "Authorization: Bearer $MISTRAL_API_KEY"
+}
+
+fetch_model_from_novitaai(){
+    curl https://api.novita.ai/v3/openai/models\
+    -sS \
+    -H 'Content-Type: application/json' \
+    -H 'Accept: application/json' \
+    -H "Authorization: Bearer $NOVITA_API_KEY"
 }

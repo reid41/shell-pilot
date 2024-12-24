@@ -68,6 +68,13 @@ if [[ "$USE_API" == "localai" ]]; then
 	fi
 fi
 
+# check if the NOVITA_API_KEY is set
+if [[ -z "$NOVITA_API_KEY" && "$USE_API" == "novita" ]]; then
+	echo "You need to set your NOVITA_API_KEY to use this script!"
+	echo "You can set it temporarily by running this on your terminal: export NOVITA_API_KEY=YOUR_KEY_HERE"
+	exit 1
+fi
+
 usage() {
 	cat <<EOF
 A simple, lightweight shell script to use OpenAI's Language Models and DALL-E 
@@ -187,6 +194,8 @@ show_llm_models_output(){
 		cat "$LIST_MODELS_CACHE_FILE"
 	elif [[ "$USE_API" == "localai" ]]; then
 		cat "$LIST_MODELS_CACHE_FILE"
+  elif [[ "$USE_API" == "novita" ]]; then
+    cat "$LIST_MODELS_CACHE_FILE"
 	fi
 }
 
@@ -264,9 +273,12 @@ fetch_and_cache_models() {
     elif [[ "$USE_API" == "localai" ]]; then
 		models_response=$(fetch_model_from_localai)
         echo $models_response | jq -r -C '.data[] | {id, object}' > "$cache_file"
-	elif [[ "$USE_API" == "mistralai" ]]; then
+	  elif [[ "$USE_API" == "mistralai" ]]; then
 		models_response=$(fetch_model_from_mistralai)
-	 	echo $models_response | jq -r -C '.data[] | {id, owned_by, created}'  > "$cache_file"
+	 	    echo $models_response | jq -r -C '.data[] | {id, owned_by, created}'  > "$cache_file"
+    elif [[ "$USE_API" == "novita" ]]; then
+    models_response=$(fetch_model_from_novitaai)
+        echo $models_response | jq -r -C '.data[] | {id, owned_by, created}' > "$cache_file"
     else
         echo "Error: No API specified."
         exit 1
@@ -526,6 +538,8 @@ code_chat_function(){
 				response_data=$(echo $response | jq -r '.content[0].text')
 			elif [[ "$USE_API" == "moonshot" ]]; then
 				response_data=$(echo $response | jq -r '.choices[].message.content')
+      elif [[ "$USE_API" == "novita" ]]; then
+        response_data=$(echo $response | jq -r '.choices[].message.content')
 			fi
 			add_assistant_response_to_chat_message "$(escape "$response_data")"
 			# execute_cmd=$(echo "$response_data" | sed 's/[`$]//g')
@@ -760,6 +774,9 @@ while [[ "$#" -gt 0 ]]; do
 		elif [[ "$USE_API" == "moonshot" ]]; then
 			update_config "$2" "MODEL_MOONSHOT"
 			check_the_setting "moonshot model" "MODEL_MOONSHOT"
+    elif [[ "$USE_API" == "novita" ]]; then
+      update_config "$2" "MODEL_NOVITA"
+      check_the_setting "novita model" "MODEL_NOVITA"
 		fi
 		;;
 	mlp | -mlp | --multi-line-prompt)
@@ -929,6 +946,15 @@ while $running; do
 				"Parameter Size: \(.details.parameter_size)",
 				"Quantization Level: \(.details.quantization_level)"
 			] | .[]' 
+    elif [[ "$USE_API" == "novita" ]]; then
+			models_response=$(fetch_model_from_novitaai)
+			model_data=$(echo $models_response | jq -r -C '.data[] | select(.id=="'"${prompt#*model:}"'")')
+			# stop the spinner
+			cat ${SPINNER_SIGNAL_FILE} >/dev/null 2>&1
+			echo "1" > ${SPINNER_SIGNAL_FILE}
+			wait $dynamic_spinner_pid
+			echo -e "$OVERWRITE_PROCESSING_LINE"
+			echo -e "${SHELLPILOT_CYAN_LABEL}Complete details for model: ${prompt#*model:}\n ${model_data}"
 		else
 			echo "Error: No API specified".
 			exit 1
@@ -968,6 +994,8 @@ while $running; do
 			response_data=$(echo $response | jq -r '.choices[].message.content')
 		elif [[ "$USE_API" == "anthropic" ]]; then
 			response_data=$(echo $response | jq -r '.content[0].text')
+    elif [[ "$USE_API" == "novita" ]]; then
+      response_data=$(echo $response | jq -r '.choices[].message.content')
 		fi
 
 		if [[ "$prompt" =~ ^cmd: ]]; then
@@ -1011,7 +1039,7 @@ while $running; do
 		timestamp=$(date +"%Y-%m-%d %H:%M")
 		echo -e "$timestamp $prompt \n$response_data \n" >> $SIPLOT_HISTORY_FILE
 
-	elif [[ "$MODEL_OPENAI" =~ ^gpt- || "$USE_API" == "ollama" || "$USE_API" == "mistralai" || "$USE_API" == "localai" || "$USE_API" == "zhipuai" || "$USE_API" == "anthropic" ]]; then
+	elif [[ "$MODEL_OPENAI" =~ ^gpt- || "$USE_API" == "ollama" || "$USE_API" == "mistralai" || "$USE_API" == "localai" || "$USE_API" == "zhipuai" || "$USE_API" == "anthropic" || "$USE_API" == "novita" ]]; then
 		# escape quotation marks, new lines, backslashes...
 		# enable chat record flag
 		if [[ "$chat_record_flag" == "true" ]]; then
@@ -1043,6 +1071,8 @@ while $running; do
 			response_data=$(echo $response | jq -r '.choices[].message.content')
 		elif [[ "$USE_API" == "anthropic" ]]; then
 			response_data=$(echo $response | jq -r '.content[0].text')
+    elif [[ "$USE_API" == "novita" ]]; then
+      response_data=$(echo $response | jq -r '.choices[].message.content')
 		fi
 
 		echo -e "$OVERWRITE_PROCESSING_LINE"
