@@ -14,7 +14,7 @@ A simple, lightweight shell script to interact with `OpenAI` or `Ollama` or `Mis
 - Use the ZhipuAI model with the [ZhipuAI API](https://open.bigmodel.cn/)
 - Use the Anthropic model with the [Anthropic API](https://docs.anthropic.com/en/api/getting-started)
 - Use the Moonshot model with the [Moonshot API](https://platform.moonshot.cn/)
-- Use the Novita AI model with the [Novita AI API](https://novita.ai/llm-api?utm_source=github_shell-pilot&utm_medium=github_readme&utm_campaign=link)
+- Use the Novita AI model with the [Novita AI API](https://novita.ai/llm-api?utm_source=github_shell-pilot&utm_medium=github_readme&utm_campaign=github_link)
 - View your history and session persistence
 - Chat context, GPT remembers previous chat questions and answers
 - Pass the input prompt with pipe/redirector(`|`, `<`), as a script parameter or normal chat mode(bash version: 4.0+)
