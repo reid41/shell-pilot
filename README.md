@@ -7,7 +7,7 @@ A simple, lightweight shell script to interact with `OpenAI` or `Ollama` or `Mis
 
 ## Features
 
-- Based on [Ollama](https://ollama.com/) to setup a local LLM repository(`support llama3, gemma2`), work with [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
+- Based on [Ollama](https://ollama.com/) to setup a local LLM repository(`support deepseek, llama3.x, gemma2`), work with [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md)
 - Use the official chatgpt model with the [official ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis) from the terminal
 - Use the official Mistral AI model with the [Mistral AI API](https://docs.mistral.ai/)
 - Use the LocalAI model with the [LocalAI API](https://localai.io/)
